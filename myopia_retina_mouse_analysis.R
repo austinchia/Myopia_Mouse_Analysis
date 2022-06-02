@@ -3,17 +3,7 @@ library(MetaboAnalystR)
 library(dplyr)
 library(data.table)
 library(EnhancedVolcano)
-
-# 
-# # Set 1
-# abund_s1 <- data.frame(read_excel("Myopia_retina_Whole Proteome results_3 sets.xlsx",sheet="Retina_WP_S1_abundance_ratios"))                                                                            
-# abund_log_s1 <- data.frame(read_excel("Myopia_retina_Whole Proteome results_3 sets.xlsx",sheet="Retina_WP_S1_abundance_log2"))                                                                            
-# abund_group_s1 <- data.frame(read_excel("Myopia_retina_Whole Proteome results_3 sets.xlsx",sheet="Retina_WP_S1_abundance_grouped"))                                                                            
-# 
-# # Set 2
-# abund_s2 <- data.frame(read_excel("Myopia_retina_Whole Proteome results_3 sets.xlsx",sheet="Retina_WP_S2_abundance_ratios"))                                                                            
-# abund_log_s2 <- data.frame(read_excel("Myopia_retina_Whole Proteome results_3 sets.xlsx",sheet="Retina_WP_S2_abundance_log2"))                                                                            
-# abund_group_s2 <- data.frame(read_excel("Myopia_retina_Whole Proteome results_3 sets.xlsx",sheet="Retina_WP_S2_abundance_grouped"))                                                                            
+library(Mfuzz)
 
 ############# Metaboanalyst ###############
 
@@ -41,8 +31,7 @@ mSet <- PlotVolcano(mSet, "volcano_abundance_S1",1, 0, "png", 72, width=NA)
 # save transformed dataset
 mSet <- SaveTransformedData(mSet)
 
-############## 
-# test <- fread("data_normalized_S1.csv")
+##########################################################################
 
 # reading in csv of 3 groups
 
@@ -54,7 +43,35 @@ grouped_combined <- left_join(grouped_s3,grouped_s2,by = 'Accession')
 grouped_combined_2 <- left_join(grouped_combined,grouped_s1,by = 'Accession')
 grouped_combined_2_no_na <- na.omit(grouped_combined_2)
 
-# median_LI_1hr <- median(grouped_combined_2_no_na$S1_LI_1hr,grouped_combined_2_no_na$S2_LI_1hr,grouped_combined_2_no_na$S3_LI_1hr,na.rm = T)
+write.csv(grouped_combined_2_no_na,"grouped_combined.csv", row.names = FALSE)
+########################## Mfuzz ##################################
+
+############## fuzz on all sets
+grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
+
+grouped_combined_GS_eSet <- as.ExpressionSet(grouped_combined_GS)
+
+cl <- mfuzz(grouped_combined_GS_eSet,c=10,m=1.25)
+mfuzz.plot(grouped_combined_GS_eSet,cl=cl,mfrow=c(5,5),time.labels=grouped_combined_GS[2,])
+
+############## only fuzz on set 3
+grouped_combined_GS_S3 <- fread("grouped_combined_GS_accounted_Mfuzz.csv",sep=',')
+grouped_combined_GS_S3_eSet <- as.ExpressionSet(grouped_combined_GS_S3)
+
+# scaling data
+grouped_combined_GS_S3_eSet.s <- standardise(grouped_combined_GS_S3_eSet)
+
+# estimating the fuzzifier
+m1 <- mestimate(grouped_combined_GS_S3_eSet.s)
+
+# determining no of clusters
+Dmin(grouped_combined_GS_S3_eSet.s, m=m1, crange=seq(2,6), repeats=3, visu=TRUE)
+
+# plot fuzz plot
+cl <- mfuzz(grouped_combined_GS_S3_eSet,c=3,m=1.25)
+mfuzz.plot(grouped_combined_GS_S3_eSet,cl=cl,mfrow=c(3,3),time.labels=grouped_combined_GS[2,],min.mem=0.5)
+
+#############################################################################
 
 # creating row medians from 3 sets for LI group
 grouped_combined_2_no_na$median_LI_0hr <- apply(grouped_combined_2_no_na[,c('S1_LI_0hr','S2_LI_0hr','S3_LI_0hr')], 1, median)
@@ -120,19 +137,7 @@ grouped_D14 <- data.frame(FC_D14,pval_D14)
 grouped_D3 <- data.frame(FC_D3,pval_D3)
 grouped_D7 <- data.frame(FC_D7,pval_D7)
 
-#plot each time 
-plot(grouped_1hr$FC_1hr, grouped_1hr$pval_1hr)
 
-# # plot volcano plot
-# EnhancedVolcano(grouped_1hr,
-#                 lab = rownames(grouped_median_pval),
-#                 x = 'FC_1hr',
-#                 y = 'pval_1hr',
-#                 title = 'LI / NL',
-#                 pCutoff = 0.05,
-#                 FCcutoff = 1.0,
-#                 pointSize = 3.0,
-#                 labSize = 6.0)
 
 #######################################################################
 
