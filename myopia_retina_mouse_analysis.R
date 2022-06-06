@@ -6,7 +6,7 @@ library(EnhancedVolcano)
 library(Mfuzz)
 library(berryFunctions)
 library(destiny)
-
+library(tidyr)
 
 #============ Metaboanalyst ================
 {
@@ -258,24 +258,37 @@ mfuzz.plot(grouped_combined_GS_eSet,cl=cl,mfrow=c(5,5),time.labels=grouped_combi
 
 #========== only fuzz on set 3
 grouped_combined_GS_S3 <- fread("grouped_combined_GS_accounted_Mfuzz.csv",sep=',')
-# covert dataframe to expression set
-grouped_combined_GS_S3_eSet <- as.ExpressionSet(grouped_combined_GS_S3)
 
-# scaling data
+#first get the time point data together:
+timepoint <- data.frame(t(c("NA",0,60,360,540,1440,4320,10080,20160)))
+colnames(timepoint) <- colnames(grouped_combined_GS_S3[,2:10])
+
+# bind that to the dataframe
+test_data <- rbind(timepoint, grouped_combined_GS_S3[,2:10])
+row.names(test_data)[1]<-"time"
+
+tmp <- tempfile()
+write.table(test_data,file=tmp, sep='\t', quote = F,col.names=NA)
+
+
+#read it back in as an expression set
+grouped_combined_GS_S3_eSet <- table2eset(file=tmp)
+
+# scales data
 grouped_combined_GS_S3_eSet.s <- standardise(grouped_combined_GS_S3_eSet)
 
 # estimating the fuzzifier
 m1 <- mestimate(grouped_combined_GS_S3_eSet.s)
+# [1] 1.318489
 
 # determining no of clusters
-Dmin(grouped_combined_GS_S3_eSet.s, m=m1, crange=seq(2,6), repeats=3, visu=TRUE)
+Dmin(grouped_combined_GS_S3_eSet.s, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
 
 # plot fuzz plot
-time_mfuzz <- c(0,60,360,540,1440,4320,10080,20160)
-cl <- mfuzz(grouped_combined_GS_S3_eSet.s,c=4,m=1.25)
+cl <- mfuzz(grouped_combined_GS_S3_eSet.s,c=11,m=m1)
 
-mfuzz.plot(grouped_combined_GS_S3_eSet.s,
+mfuzz.plot2(grouped_combined_GS_S3_eSet.s,
            cl=cl,
            mfrow=c(3,3),
-           time.labels = seq(0,20160,100),
-           min.mem=0.5)
+           # min.mem=0.5,
+           )
