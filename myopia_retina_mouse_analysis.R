@@ -7,6 +7,91 @@ library(Mfuzz)
 library(berryFunctions)
 library(destiny)
 library(tidyr)
+library(stringr)
+
+# ============== 1. Reads Raw Data ===================
+
+# reads S1 raw data
+Retina_WP_S1 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S1') %>%
+  select(c(`Accession`,`Abundance Ratios`))
+
+# reads S2 raw data
+Retina_WP_S2 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S2') %>%
+  select(c(`Accession`,`Abundance Ratios`))
+
+# reads S3 raw data
+Retina_WP_S3 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S3') %>%
+  select(c(`Accession`,`Abundance Ratios`))
+
+# =============== 2. Data Manipulation ===============
+# S1 Data manipulation
+{
+  # splits string into columns
+  Retina_WP_S1_split <- str_split_fixed(as.character(Retina_WP_S1$`Abundance Ratios`), ';',15)
+  
+  # adds columns to original data
+  Retina_WP_S1 <- cbind(Retina_WP_S1,Retina_WP_S1_split)
+  
+  colnames(Retina_WP_S1) <- c('Accession', 'Abundance Ratios', 'S1_LI_1hr','S1_LI_6hr','S1_LI_9hr','S1_LI_D1','S1_LI_D14','S1_LI_D3','S1_LI_D7','S1_NL_0hr','S1_NL_1hr','S1_NL_6hr','S1_NL_9hr','S1_NL_D1','S1_NL_D14','S1_NL_D3','S1_NL_D7')
+  
+  # removes abundance column
+  Retina_WP_S1 <- select(Retina_WP_S1, -c(`Abundance Ratios`)) %>%
+    mutate(S1_LI_0hr = S1_NL_0hr) %>%
+    relocate(S1_LI_0hr, .after = `Accession`) %>%
+    relocate(S1_LI_D14, .after = `S1_LI_D7`) %>%
+    relocate(S1_NL_D14, .after = `S1_NL_D7`)
+  
+}
+# S2 Data manipulation
+{
+  # splits string into columns
+  Retina_WP_S2_split <- str_split_fixed(as.character(Retina_WP_S2$`Abundance Ratios`), ';',15)
+  
+  # adds columns to original data
+  Retina_WP_S2 <- cbind(Retina_WP_S2,Retina_WP_S2_split)
+  
+  colnames(Retina_WP_S2) <- c('Accession', 'Abundance Ratios', 'S2_LI_1hr','S2_LI_6hr','S2_LI_9hr','S2_LI_D1','S2_LI_D14','S2_LI_D3','S2_LI_D7','S2_NL_0hr','S2_NL_1hr','S2_NL_6hr','S2_NL_9hr','S2_NL_D1','S2_NL_D14','S2_NL_D3','S2_NL_D7')
+  
+  # removes abundance column
+  Retina_WP_S2 <- select(Retina_WP_S2, -c(`Abundance Ratios`)) %>%
+    mutate(S2_LI_0hr = S2_NL_0hr) %>%
+    relocate(S2_LI_0hr, .after = `Accession`) %>%
+    relocate(S2_LI_D14, .after = `S2_LI_D7`) %>%
+    relocate(S2_NL_D14, .after = `S2_NL_D7`)
+  }
+# S3 Data manipulation
+{
+  # splits string into columns
+  Retina_WP_S3_split <- str_split_fixed(as.character(Retina_WP_S3$`Abundance Ratios`), ';',15)
+  
+  # adds columns to original data
+  Retina_WP_S3 <- cbind(Retina_WP_S3,Retina_WP_S3_split)
+  
+  colnames(Retina_WP_S3) <- c('Accession', 'Abundance Ratios', 'S3_LI_1hr','S3_LI_6hr','S3_LI_9hr','S3_LI_D1','S3_LI_D14','S3_LI_D3','S3_LI_D7','S3_NL_0hr','S3_NL_1hr','S3_NL_6hr','S3_NL_9hr','S3_NL_D1','S3_NL_D14','S3_NL_D3','S3_NL_D7')
+  
+  # removes abundance column
+  Retina_WP_S3 <- select(Retina_WP_S3, -c(`Abundance Ratios`)) %>%
+    mutate(S3_LI_0hr = S3_NL_0hr) %>%
+    relocate(S3_LI_0hr, .after = `Accession`) %>%
+    relocate(S3_LI_D14, .after = `S3_LI_D7`) %>%
+    relocate(S3_NL_D14, .after = `S3_NL_D7`)
+}
+
+# combines all 3 sets into 1 dataset 
+# (left joins to S3 because it has most no of proteins)
+ratio_combined <- left_join(Retina_WP_S3, Retina_WP_S2, by = 'Accession') %>%
+  left_join(Retina_WP_S1, by = 'Accession') %>%
+  na.omit()
+
+# splits accession number (ie Q9JHU4-1)
+ratio_combined$Accession <- sapply(strsplit(ratio_combined$Accession,"-"), `[`, 1)
+
+# exports accession numbers to upload to Uniprot
+fwrite(data.frame(ratio_combined$Accession), "test.csv", sep = ",")
+
+gene_symbol <- fread("test_map.csv",sep=',')
+gene_symbol_map <- str_split_fixed(gene_symbol$`From	To`,"n\ ",2)
+gene_symbol
 
 #============ Metaboanalyst ================
 {
@@ -37,8 +122,8 @@ mSet <- SaveTransformedData(mSet)
 }
 
 # reading in csv of 3 groups
-
 grouped_s1 <- fread("grouped_1.csv",sep=',')
+
 grouped_s2 <- fread("grouped_2.csv",sep=',')
 grouped_s3 <- fread("grouped_3.csv",sep=',')
 
@@ -48,7 +133,7 @@ grouped_combined_2_no_na <- na.omit(grouped_combined_2)
 
 write.csv(grouped_combined_2_no_na,"grouped_combined.csv", row.names = FALSE)
 
-#============ Creates 7 Volcano Plots - replicates Metaboanalyst ===================
+#============ Creates 7 Volcano Plots - replaces Metaboanalyst ===================
 
 grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
 
@@ -187,7 +272,6 @@ grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
 
 }
 
-
 # plots volcano plot
 vol_plot <- function(x) {
   EnhancedVolcano(x,
@@ -256,39 +340,39 @@ Dmin(grouped_combined_GS_eSet.s, m=m1, crange=seq(2,20,1), repeats=3, visu=TRUE)
 cl <- mfuzz(grouped_combined_GS_eSet,c=10,m=1.25)
 mfuzz.plot(grouped_combined_GS_eSet,cl=cl,mfrow=c(5,5),time.labels=grouped_combined_GS[2,])
 
-#========== only fuzz on set 3
+#========== runs fuzz on only set 3
 grouped_combined_GS_S3 <- fread("grouped_combined_GS_accounted_Mfuzz.csv",sep=',')
 
-#first get the time point data together:
-timepoint <- data.frame(t(c("NA",0,60,360,540,1440,4320,10080,20160)))
+#creates timepoints
+timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
 colnames(timepoint) <- colnames(grouped_combined_GS_S3[,2:10])
 
-# bind that to the dataframe
+# binds timepoints to original dataframe
 test_data <- rbind(timepoint, grouped_combined_GS_S3[,2:10])
 row.names(test_data)[1]<-"time"
-
 tmp <- tempfile()
 write.table(test_data,file=tmp, sep='\t', quote = F,col.names=NA)
 
-
-#read it back in as an expression set
+#reads temp file as an expression set
 grouped_combined_GS_S3_eSet <- table2eset(file=tmp)
 
 # scales data
 grouped_combined_GS_S3_eSet.s <- standardise(grouped_combined_GS_S3_eSet)
 
-# estimating the fuzzifier
+# estimates the fuzzifier
 m1 <- mestimate(grouped_combined_GS_S3_eSet.s)
-# [1] 1.318489
+# [1] 1.440961
 
-# determining no of clusters
+# plots scree plot - determine no of centroids
 Dmin(grouped_combined_GS_S3_eSet.s, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
 
-# plot fuzz plot
-cl <- mfuzz(grouped_combined_GS_S3_eSet.s,c=11,m=m1)
+# runs c-means fuzzy algorithm 
+cl <- mfuzz(grouped_combined_GS_S3_eSet.s,c=12,m=m1)
 
+# plots mfuzz plot
 mfuzz.plot2(grouped_combined_GS_S3_eSet.s,
            cl=cl,
            mfrow=c(3,3),
-           # min.mem=0.5,
+           time.labels = c(0,1,6,9,24,72,168,336),
+           min.mem=0.5
            )
