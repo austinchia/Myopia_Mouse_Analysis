@@ -6,7 +6,7 @@ library(EnhancedVolcano)
 library(Mfuzz)
 library(berryFunctions)
 
-#============Metaboanalyst ================
+#============ Metaboanalyst ================
 {
 # initializing object
 mSet <- InitDataObjects("pktable", "stat", FALSE)
@@ -51,7 +51,6 @@ write.csv(grouped_combined_2_no_na,"grouped_combined.csv", row.names = FALSE)
 grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
 
 # create groupings for LI and NL to insert at row 1
-NALI_groupings <- c(NA,'LI','LI','LI','NL','NL','NL')
 
 # selects columns for each timing (ie 1hr)
 {
@@ -186,16 +185,29 @@ NALI_groupings <- c(NA,'LI','LI','LI','NL','NL','NL')
 
 }
 
-# plot volcano plot
-EnhancedVolcano(grouped_D7,
-                lab = rownames(grouped_D7),
-                x = 'Log2FC',
-                y = 'p_value',
-                title = 'LI / NL',
-                pCutoff = 0.05,
-                FCcutoff = 1.0,
-                pointSize = 3.0,
-                labSize = 3.0)
+
+# plots volcano plot
+vol_plot <- function(x) {
+  EnhancedVolcano(x,
+                  lab = rownames(x),
+                  x = 'Log2FC',
+                  y = 'p_value',
+                  title = 'LI / NL',
+                  pCutoff = 0.05,
+                  FCcutoff = 1.0,
+                  pointSize = 3.0,
+                  labSize = 3.0)
+}
+
+# plots volcano plots for 7 timings (ie 1hr)
+vol_plot(grouped_0hr)
+vol_plot(grouped_1hr)
+vol_plot(grouped_6hr)
+vol_plot(grouped_9hr)
+vol_plot(grouped_D1)
+vol_plot(grouped_D14)
+vol_plot(grouped_D3)
+vol_plot(grouped_D7)
 
 #================ Mfuzz ==========================
 
