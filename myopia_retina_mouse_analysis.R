@@ -90,8 +90,11 @@ ratio_combined$Accession <- sapply(strsplit(ratio_combined$Accession,"-"), `[`, 
 fwrite(data.frame(ratio_combined$Accession), "test.csv", sep = ",")
 
 gene_symbol <- fread("test_map.csv",sep=',')
-gene_symbol_map <- str_split_fixed(gene_symbol$`From	To`,"n\ ",2)
-gene_symbol
+gene_symbol_map <- str_split_fixed(gene_symbol$`From	To`,"",2)
+
+# splits gene symbol by break (in progress)
+gene_symbol_map <- unlist(strsplit(gene_symbol$`From	To`, '\n'))
+
 
 #============ Metaboanalyst ================
 {
