@@ -201,7 +201,9 @@ vol_plot <- function(x) {
                   labSize = 3.0)
 }
 
-# plots volcano plots for 7 timings (ie 1hr)
+# exports plots volcano plots for 7 timings (ie 1hr)
+{ 
+
 png(file="vplot_0hr.png")
 vol_plot(grouped_0hr)
 dev.off()
@@ -233,6 +235,8 @@ dev.off()
 png(file="vplot_D14.png")
 vol_plot(grouped_D14)
 dev.off()
+  
+}
 
 #================ Mfuzz ==========================
 
