@@ -5,6 +5,8 @@ library(data.table)
 library(EnhancedVolcano)
 library(Mfuzz)
 library(berryFunctions)
+library(destiny)
+
 
 #============ Metaboanalyst ================
 {
@@ -200,14 +202,37 @@ vol_plot <- function(x) {
 }
 
 # plots volcano plots for 7 timings (ie 1hr)
+png(file="vplot_0hr.png")
 vol_plot(grouped_0hr)
+dev.off()
+
+png(file="vplot_1hr.png")
 vol_plot(grouped_1hr)
+dev.off()
+
+png(file="vplot_6hr.png")
 vol_plot(grouped_6hr)
+dev.off()
+
+png(file="vplot_9hr.png")
 vol_plot(grouped_9hr)
+dev.off()
+
+png(file="vplot_D1.png")
 vol_plot(grouped_D1)
-vol_plot(grouped_D14)
+dev.off()
+
+png(file="vplot_D3.png")
 vol_plot(grouped_D3)
+dev.off()
+
+png(file="vplot_D7.png")
 vol_plot(grouped_D7)
+dev.off()
+
+png(file="vplot_D14.png")
+vol_plot(grouped_D14)
+dev.off()
 
 #================ Mfuzz ==========================
 
@@ -242,5 +267,11 @@ m1 <- mestimate(grouped_combined_GS_S3_eSet.s)
 Dmin(grouped_combined_GS_S3_eSet.s, m=m1, crange=seq(2,6), repeats=3, visu=TRUE)
 
 # plot fuzz plot
-cl <- mfuzz(grouped_combined_GS_S3_eSet.s,c=3,m=1.25)
-mfuzz.plot(grouped_combined_GS_S3_eSet.s,cl=cl,mfrow=c(3,3),time.labels=grouped_combined_GS_S3$Accession,min.mem=0.5)
+time_mfuzz <- c(0,60,360,540,1440,4320,10080,20160)
+cl <- mfuzz(grouped_combined_GS_S3_eSet.s,c=4,m=1.25)
+
+mfuzz.plot(grouped_combined_GS_S3_eSet.s,
+           cl=cl,
+           mfrow=c(3,3),
+           time.labels = seq(0,20160,100),
+           min.mem=0.5)
