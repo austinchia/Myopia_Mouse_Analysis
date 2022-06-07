@@ -11,6 +11,7 @@ library(stringr)
 library(marray)
 library(ggplot2)
 library(janitor)
+
 # ============== 1. Reads Raw Data ===================
 
 # reads S1 raw data
@@ -101,46 +102,6 @@ colnames(gene_symbol_map) <- c("Accession", "Gene Symbol")
 
 ratio_combined_test <- left_join(ratio_combined, gene_symbol_map, by="Accession") %>%
   relocate(`Gene Symbol`, .after = `Accession`)
-
-#============ Metaboanalyst ================
-{
-# initializing object
-mSet <- InitDataObjects("pktable", "stat", FALSE)
-# loading in data
-mSet <- Read.TextData(mSet, "abundance_S1_grouped_input.csv", "colu", "disc");
-# data check
-mSet <- SanityCheckData(mSet)
-mSet <- ReplaceMin(mSet);
-
-# filtering features
-mSet <- FilterVariable(mSet, "none", "F", 25)
-
-# median normalization, log10 transformation, pareto scaling
-mSet <- PreparePrenormData(mSet)
-mSet <- Normalization(mSet, "MedianNorm", "LogNorm", "ParetoNorm", ratio=FALSE, ratioNum=20)
-mSet <- PlotNormSummary(mSet, "norm_0_", "png", 72, width=NA)
-mSet <- PlotSampleNormSummary(mSet, "snorm_0_", "png", 72, width=NA)
-
-# plot volcano plot
-mSet <- Volcano.Anal(mSet, FALSE, 1.5, 0, F, 0.05, TRUE, "raw")
-mSet <- PlotVolcano(mSet, "volcano_abundance_S1",1, 0, "png", 72, width=NA)
-
-# save transformed dataset
-mSet <- SaveTransformedData(mSet)
-
-}
-
-# reading in csv of 3 groups
-grouped_s1 <- fread("grouped_1.csv",sep=',')
-
-grouped_s2 <- fread("grouped_2.csv",sep=',')
-grouped_s3 <- fread("grouped_3.csv",sep=',')
-
-grouped_combined <- left_join(grouped_s3,grouped_s2,by = 'Accession')
-grouped_combined_2 <- left_join(grouped_combined,grouped_s1,by = 'Accession')
-grouped_combined_2_no_na <- na.omit(grouped_combined_2)
-
-write.csv(grouped_combined_2_no_na,"grouped_combined.csv", row.names = FALSE)
 
 #============ Creates 7 Volcano Plots - replaces Metaboanalyst ===================
 
@@ -331,6 +292,7 @@ dev.off()
   
 }
 
+
 #================ Mfuzz ==========================
 
 #======== fuzz on all sets
@@ -349,7 +311,7 @@ dev.off()
 # cl <- mfuzz(grouped_combined_GS_eSet,c=10,m=1.25)
 # mfuzz.plot(grouped_combined_GS_eSet,cl=cl,mfrow=c(5,5),time.labels=grouped_combined_GS[2,])
 
-#========== runs fuzz on only set 3 LI
+#========== 1. Runs Fuzz On Only Set 3 LI =========
 #== selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`)
@@ -368,19 +330,91 @@ fuzz_S3_LI <- grouped_combined_GS %>%
 fuzz_S3_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`)
 
+# grouped_combined_GS_S3
 
-#creates timepoints
-timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
-colnames(timepoint) <- colnames(grouped_combined_GS_S3[,2:10])
+# ========= 2. Creates Timepoints and Binds to Original Dataframe ====
+# == S3 NL
+# timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
+# colnames(timepoint) <- colnames(fuzz_S3_NL)
+# temp_table <- rbind(timepoint, fuzz_S3_NL)
+# row.names(temp_table)[1]<-"time"
+# tmp <- tempfile()
+# write.table(temp_table,file=tmp, sep='\t', quote = F,col.names=NA)
 
-# binds timepoints to original dataframe
-test_data <- rbind(timepoint, grouped_combined_GS_S3[,2:10])
-row.names(test_data)[1]<-"time"
-tmp <- tempfile()
-write.table(test_data,file=tmp, sep='\t', quote = F,col.names=NA)
+# == function to create timepoints, convert to eset
+
+create_timepoints <- function(x) {
+  # creates timepoints
+  timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
+  colnames(timepoint) <- colnames(x)
+  
+  # creates temp table
+  temp_table <- rbind(timepoint, x) 
+  
+  # sets rownames
+  row.names(temp_table)[1]<-"time" 
+  
+  # stores as tmp format to read into table2eset
+  tmp <- tempfile() 
+  write.table(temp_table,file=tmp, sep='\t', quote = F,col.names=NA)
+  x <- table2eset(file=tmp)
+  
+}
+
+# runs create_timepoints
+S1_LI_eSet <- create_timepoints(fuzz_S1_LI)
+S1_NL_eSet <- create_timepoints(fuzz_S1_NL)
+
+S2_LI_eSet <- create_timepoints(fuzz_S2_LI)
+S2_NL_eSet <- create_timepoints(fuzz_S2_NL)
+
+S3_LI_eSet <- create_timepoints(fuzz_S3_LI)
+S3_NL_eSet <- create_timepoints(fuzz_S3_NL)
+
+# ============ 3. Estimates Fuzzifier (ie m1) ================
+m1_S1_LI <- mestimate(S1_LI_eSet)
+m1_S1_NL <- mestimate(S1_NL_eSet)
+m1_S2_LI <- mestimate(S2_LI_eSet)
+m1_S2_NL <- mestimate(S2_NL_eSet)
+m1_S3_LI <- mestimate(S3_LI_eSet)
+m1_S3_NL <- mestimate(S3_NL_eSet)
+
+# ============ 4. Plots Mfuzz Plots ======================
+
+plot_mfuzz <- function(x) {
+  cl <- mfuzz(x,c=12,m=m1)
+  mfuzz.plot2(x,
+              cl=cl,
+              mfrow=c(3,3),
+              time.labels = c(0,1,6,9,24,72,168,336),
+              min.mem=0.5,
+  )
+}
+
+plot_mfuzz(S1_LI_eSet)
+plot_mfuzz(S1_NL_eSet)
+plot_mfuzz(S2_LI_eSet)
+plot_mfuzz(S2_NL_eSet)
+plot_mfuzz(S3_LI_eSet)
+plot_mfuzz(S3_NL_eSet)
+
+cl <- mfuzz(S1_LI_eSet,c=12,m=m1)
+mfuzz.plot2(grouped_combined_GS_S3_eSet.s,
+            cl=cl,
+            mfrow=c(3,3),
+            time.labels = c(0,1,6,9,24,72,168,336),
+            min.mem=0.5,
+)
+
+# colnames(timepoint) <- colnames(grouped_combined_GS_S3[,2:10])
+# temp_table <- rbind(timepoint, grouped_combined_GS_S3[,2:10])
+# row.names(temp_table)[1]<-"time"
+# tmp <- tempfile()
+# write.table(temp_table,file=tmp, sep='\t', quote = F,col.names=NA)
 
 #reads temp file as an expression set
-grouped_combined_GS_S3_eSet <- table2eset(file=tmp)
+# grouped_combined_GS_S3_eSet <- table2eset(file=tmp)
+
 
 # scales data
 grouped_combined_GS_S3_eSet.s <- standardise(grouped_combined_GS_S3_eSet)
@@ -413,3 +447,44 @@ acore <- acore(grouped_combined_GS_S3_eSet.s,cl,min.acore=0)
 # pull out the scores for the cluster assignments 
 # (where the assignment is based on the top scoring cluster)
 acore_list <- do.call(rbind, lapply(seq_along(acore), function(i){ data.frame(CLUSTER=i, acore[[i]])}))
+
+#============ Metaboanalyst ================
+{
+  # initializing object
+  mSet <- InitDataObjects("pktable", "stat", FALSE)
+  # loading in data
+  mSet <- Read.TextData(mSet, "abundance_S1_grouped_input.csv", "colu", "disc");
+  # data check
+  mSet <- SanityCheckData(mSet)
+  mSet <- ReplaceMin(mSet);
+  
+  # filtering features
+  mSet <- FilterVariable(mSet, "none", "F", 25)
+  
+  # median normalization, log10 transformation, pareto scaling
+  mSet <- PreparePrenormData(mSet)
+  mSet <- Normalization(mSet, "MedianNorm", "LogNorm", "ParetoNorm", ratio=FALSE, ratioNum=20)
+  mSet <- PlotNormSummary(mSet, "norm_0_", "png", 72, width=NA)
+  mSet <- PlotSampleNormSummary(mSet, "snorm_0_", "png", 72, width=NA)
+  
+  # plot volcano plot
+  mSet <- Volcano.Anal(mSet, FALSE, 1.5, 0, F, 0.05, TRUE, "raw")
+  mSet <- PlotVolcano(mSet, "volcano_abundance_S1",1, 0, "png", 72, width=NA)
+  
+  # save transformed dataset
+  mSet <- SaveTransformedData(mSet)
+  
+}
+
+# reading in csv of 3 groups
+grouped_s1 <- fread("grouped_1.csv",sep=',')
+
+grouped_s2 <- fread("grouped_2.csv",sep=',')
+grouped_s3 <- fread("grouped_3.csv",sep=',')
+
+grouped_combined <- left_join(grouped_s3,grouped_s2,by = 'Accession')
+grouped_combined_2 <- left_join(grouped_combined,grouped_s1,by = 'Accession')
+grouped_combined_2_no_na <- na.omit(grouped_combined_2)
+
+write.csv(grouped_combined_2_no_na,"grouped_combined.csv", row.names = FALSE)
+
