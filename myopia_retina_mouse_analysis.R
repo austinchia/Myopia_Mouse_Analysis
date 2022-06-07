@@ -8,19 +8,21 @@ library(berryFunctions)
 library(destiny)
 library(tidyr)
 library(stringr)
-
+library(marray)
+library(ggplot2)
+library(janitor)
 # ============== 1. Reads Raw Data ===================
 
 # reads S1 raw data
-Retina_WP_S1 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S1') %>%
+Retina_WP_S1 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S1', na = c("", "NA")) %>%
   select(c(`Accession`,`Abundance Ratios`))
-
+  
 # reads S2 raw data
-Retina_WP_S2 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S2') %>%
+Retina_WP_S2 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S2', na = c("", "NA")) %>%
   select(c(`Accession`,`Abundance Ratios`))
 
 # reads S3 raw data
-Retina_WP_S3 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S3') %>%
+Retina_WP_S3 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S3', na = c("", "NA")) %>%
   select(c(`Accession`,`Abundance Ratios`))
 
 # =============== 2. Data Manipulation ===============
@@ -31,7 +33,6 @@ Retina_WP_S3 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', s
   
   # adds columns to original data
   Retina_WP_S1 <- cbind(Retina_WP_S1,Retina_WP_S1_split)
-  
   colnames(Retina_WP_S1) <- c('Accession', 'Abundance Ratios', 'S1_LI_1hr','S1_LI_6hr','S1_LI_9hr','S1_LI_D1','S1_LI_D14','S1_LI_D3','S1_LI_D7','S1_NL_0hr','S1_NL_1hr','S1_NL_6hr','S1_NL_9hr','S1_NL_D1','S1_NL_D14','S1_NL_D3','S1_NL_D7')
   
   # removes abundance column
@@ -83,6 +84,9 @@ ratio_combined <- left_join(Retina_WP_S3, Retina_WP_S2, by = 'Accession') %>%
   left_join(Retina_WP_S1, by = 'Accession') %>%
   na.omit()
 
+ratio_combined <- ratio_combined %>% 
+  mutate_all(na_if,"")
+
 # splits accession number (ie Q9JHU4-1)
 ratio_combined$Accession <- sapply(strsplit(ratio_combined$Accession,"-"), `[`, 1)
 
@@ -90,11 +94,13 @@ ratio_combined$Accession <- sapply(strsplit(ratio_combined$Accession,"-"), `[`, 
 fwrite(data.frame(ratio_combined$Accession), "test.csv", sep = ",")
 
 gene_symbol <- fread("test_map.csv",sep=',')
-gene_symbol_map <- str_split_fixed(gene_symbol$`From	To`,"",2)
 
-# splits gene symbol by break (in progress)
-gene_symbol_map <- unlist(strsplit(gene_symbol$`From	To`, '\n'))
+# splits gene symbol by break
+gene_symbol_map <- data.frame(str_split_fixed(gene_symbol$`From	To`, '\t',2))
+colnames(gene_symbol_map) <- c("Accession", "Gene Symbol") 
 
+ratio_combined_test <- left_join(ratio_combined, gene_symbol_map, by="Accession") %>%
+  relocate(`Gene Symbol`, .after = `Accession`)
 
 #============ Metaboanalyst ================
 {
@@ -329,22 +335,39 @@ dev.off()
 
 #======== fuzz on all sets
 # convert dataframe to expression set
-grouped_combined_GS_eSet <- as.ExpressionSet(grouped_combined_GS)
+# grouped_combined_GS_eSet <- as.ExpressionSet(grouped_combined_GS)
+# 
+# # scaling data
+# grouped_combined_GS_eSet.s <- standardise(grouped_combined_GS_eSet)
+# 
+# # estimating the fuzzifier
+# m1 <- mestimate(grouped_combined_GS_eSet.s)
+# 
+# # determining no of clusters
+# Dmin(grouped_combined_GS_eSet.s, m=m1, crange=seq(2,20,1), repeats=3, visu=TRUE)
+# 
+# cl <- mfuzz(grouped_combined_GS_eSet,c=10,m=1.25)
+# mfuzz.plot(grouped_combined_GS_eSet,cl=cl,mfrow=c(5,5),time.labels=grouped_combined_GS[2,])
 
-# scaling data
-grouped_combined_GS_eSet.s <- standardise(grouped_combined_GS_eSet)
+#========== runs fuzz on only set 3 LI
+#== selects S1 for fuzz
+fuzz_S1_LI <- grouped_combined_GS %>%
+  select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`)
+fuzz_S1_NL <- grouped_combined_GS %>%
+  select(`Gene Symbol`, `S1_NL_0hr`,	`S1_NL_1hr`,	`S1_NL_6hr`,	`S1_NL_9hr`,	`S1_NL_D1`,	`S1_NL_D14`,	`S1_NL_D3`,	`S1_NL_D7`)
 
-# estimating the fuzzifier
-m1 <- mestimate(grouped_combined_GS_eSet.s)
+#== selects S2 for fuzz
+fuzz_S2_LI <- grouped_combined_GS %>%
+  select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D14`,	`S2_LI_D3`,	`S2_LI_D7`)
+fuzz_S2_NL <- grouped_combined_GS %>%
+  select(`Gene Symbol`, `S2_NL_0hr`,	`S2_NL_1hr`,	`S2_NL_6hr`,	`S2_NL_9hr`,	`S2_NL_D1`,	`S2_NL_D14`,	`S2_NL_D3`,	`S2_NL_D7`)
 
-# determining no of clusters
-Dmin(grouped_combined_GS_eSet.s, m=m1, crange=seq(2,20,1), repeats=3, visu=TRUE)
+#== selects S3 for fuzz
+fuzz_S3_LI <- grouped_combined_GS %>%
+  select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D14`,	`S3_LI_D3`,	`S3_LI_D7`)
+fuzz_S3_NL <- grouped_combined_GS %>%
+  select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`)
 
-cl <- mfuzz(grouped_combined_GS_eSet,c=10,m=1.25)
-mfuzz.plot(grouped_combined_GS_eSet,cl=cl,mfrow=c(5,5),time.labels=grouped_combined_GS[2,])
-
-#========== runs fuzz on only set 3
-grouped_combined_GS_S3 <- fread("grouped_combined_GS_accounted_Mfuzz.csv",sep=',')
 
 #creates timepoints
 timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
@@ -367,7 +390,7 @@ m1 <- mestimate(grouped_combined_GS_S3_eSet.s)
 # [1] 1.440961
 
 # plots scree plot - determine no of centroids
-Dmin(grouped_combined_GS_S3_eSet.s, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
+# Dmin(grouped_combined_GS_S3_eSet.s, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
 
 # runs c-means fuzzy algorithm 
 cl <- mfuzz(grouped_combined_GS_S3_eSet.s,c=12,m=m1)
@@ -377,5 +400,16 @@ mfuzz.plot2(grouped_combined_GS_S3_eSet.s,
            cl=cl,
            mfrow=c(3,3),
            time.labels = c(0,1,6,9,24,72,168,336),
-           min.mem=0.5
+           min.mem=0.5,
            )
+
+# creates correlation matrix between cluster centroids
+# (no more than 0.85)
+correlation_matrix <- data.frame(cor(t(cl[[1]])))
+
+#extracts membership values 
+acore <- acore(grouped_combined_GS_S3_eSet.s,cl,min.acore=0)
+
+# pull out the scores for the cluster assignments 
+# (where the assignment is based on the top scoring cluster)
+acore_list <- do.call(rbind, lapply(seq_along(acore), function(i){ data.frame(CLUSTER=i, acore[[i]])}))
