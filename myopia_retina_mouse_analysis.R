@@ -103,7 +103,7 @@ colnames(gene_symbol_map) <- c("Accession", "Gene Symbol")
 ratio_combined_test <- left_join(ratio_combined, gene_symbol_map, by="Accession") %>%
   relocate(`Gene Symbol`, .after = `Accession`)
 
-#============ Creates 7 Volcano Plots - replaces Metaboanalyst ===================
+# =========== Creates 7 Volcano Plots - replaces Metaboanalyst ===================
 
 grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
 
@@ -295,23 +295,7 @@ dev.off()
 
 #================ Mfuzz ==========================
 
-#======== fuzz on all sets
-# convert dataframe to expression set
-# grouped_combined_GS_eSet <- as.ExpressionSet(grouped_combined_GS)
-# 
-# # scaling data
-# grouped_combined_GS_eSet.s <- standardise(grouped_combined_GS_eSet)
-# 
-# # estimating the fuzzifier
-# m1 <- mestimate(grouped_combined_GS_eSet.s)
-# 
-# # determining no of clusters
-# Dmin(grouped_combined_GS_eSet.s, m=m1, crange=seq(2,20,1), repeats=3, visu=TRUE)
-# 
-# cl <- mfuzz(grouped_combined_GS_eSet,c=10,m=1.25)
-# mfuzz.plot(grouped_combined_GS_eSet,cl=cl,mfrow=c(5,5),time.labels=grouped_combined_GS[2,])
-
-#========== 1. Runs Fuzz On Only Set 3 LI =========
+# ============ 1. Selects Columns Fro, Main Grouped Matrix =========
 #== selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`)
@@ -330,9 +314,7 @@ fuzz_S3_LI <- grouped_combined_GS %>%
 fuzz_S3_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`)
 
-# grouped_combined_GS_S3
-
-# ========= 2. Creates Timepoints and Binds to Original Dataframe ====
+# ============ 2. Creates Timepoints and Binds to Original Dataframe ====
 # == S3 NL
 # timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
 # colnames(timepoint) <- colnames(fuzz_S3_NL)
@@ -397,45 +379,6 @@ plot_mfuzz(S2_LI_eSet)
 plot_mfuzz(S2_NL_eSet)
 plot_mfuzz(S3_LI_eSet)
 plot_mfuzz(S3_NL_eSet)
-
-cl <- mfuzz(S1_LI_eSet,c=12,m=m1)
-mfuzz.plot2(grouped_combined_GS_S3_eSet.s,
-            cl=cl,
-            mfrow=c(3,3),
-            time.labels = c(0,1,6,9,24,72,168,336),
-            min.mem=0.5,
-)
-
-# colnames(timepoint) <- colnames(grouped_combined_GS_S3[,2:10])
-# temp_table <- rbind(timepoint, grouped_combined_GS_S3[,2:10])
-# row.names(temp_table)[1]<-"time"
-# tmp <- tempfile()
-# write.table(temp_table,file=tmp, sep='\t', quote = F,col.names=NA)
-
-#reads temp file as an expression set
-# grouped_combined_GS_S3_eSet <- table2eset(file=tmp)
-
-
-# scales data
-grouped_combined_GS_S3_eSet.s <- standardise(grouped_combined_GS_S3_eSet)
-
-# estimates the fuzzifier
-m1 <- mestimate(grouped_combined_GS_S3_eSet.s)
-# [1] 1.440961
-
-# plots scree plot - determine no of centroids
-# Dmin(grouped_combined_GS_S3_eSet.s, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
-
-# runs c-means fuzzy algorithm 
-cl <- mfuzz(grouped_combined_GS_S3_eSet.s,c=12,m=m1)
-
-# plots mfuzz plot
-mfuzz.plot2(grouped_combined_GS_S3_eSet.s,
-           cl=cl,
-           mfrow=c(3,3),
-           time.labels = c(0,1,6,9,24,72,168,336),
-           min.mem=0.5,
-           )
 
 # creates correlation matrix between cluster centroids
 # (no more than 0.85)
