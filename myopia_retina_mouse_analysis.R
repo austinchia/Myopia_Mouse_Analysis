@@ -100,9 +100,12 @@ gene_symbol <- fread("test_map.csv",sep=',')
 gene_symbol_map <- data.frame(str_split_fixed(gene_symbol$`From	To`, '\t',2))
 colnames(gene_symbol_map) <- c("Accession", "Gene Symbol") 
 
-ratio_combined_test <- left_join(ratio_combined, gene_symbol_map, by="Accession") %>%
-  relocate(`Gene Symbol`, .after = `Accession`)
+# merges gene symbol column to main df
+ratio_combined_no_na <- left_join(ratio_combined, gene_symbol_map, by="Accession") %>%
+  relocate(`Gene Symbol`, .after = `Accession`) %>%
+  na.omit()
 
+fwrite(ratio_combined_no_na, "abund_ratio_combined.csv", sep = ",")
 
 # =========== Volcano Plots - replaces Metaboanalyst ============= ===================
 
@@ -316,13 +319,6 @@ fuzz_S3_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`)
 
 # ============ 2. Creates Timepoints and Binds to Original Dataframe ====
-# == S3 NL
-# timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
-# colnames(timepoint) <- colnames(fuzz_S3_NL)
-# temp_table <- rbind(timepoint, fuzz_S3_NL)
-# row.names(temp_table)[1]<-"time"
-# tmp <- tempfile()
-# write.table(temp_table,file=tmp, sep='\t', quote = F,col.names=NA)
 
 # == function to create timepoints, convert to eset
 
@@ -386,6 +382,8 @@ plot_mfuzz(S2_NL_eSet)
 # plots mfuzz for Set 3
 plot_mfuzz(S3_LI_eSet)
 plot_mfuzz(S3_NL_eSet)
+
+# ============== 5. Mfuzz Model Validation and Evaluation ==========
 
 # creates correlation matrix between cluster centroids
 # (no more than 0.85)
