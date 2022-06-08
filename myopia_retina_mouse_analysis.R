@@ -26,7 +26,7 @@ Retina_WP_S2 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', s
 Retina_WP_S3 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S3', na = c("", "NA")) %>%
   select(c(`Accession`,`Abundance Ratios`))
 
-# =============== 2. Data Manipulation ===============
+# ============== 2. Data Manipulation ===============
 # S1 Data manipulation
 {
   # splits string into columns
@@ -103,7 +103,8 @@ colnames(gene_symbol_map) <- c("Accession", "Gene Symbol")
 ratio_combined_test <- left_join(ratio_combined, gene_symbol_map, by="Accession") %>%
   relocate(`Gene Symbol`, .after = `Accession`)
 
-# =========== Creates 7 Volcano Plots - replaces Metaboanalyst ===================
+
+# =========== Volcano Plots - replaces Metaboanalyst ============= ===================
 
 grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
 
@@ -293,9 +294,9 @@ dev.off()
 }
 
 
-#================ Mfuzz ==========================
 
-# ============ 1. Selects Columns Fro, Main Grouped Matrix =========
+# =========== Mfuzz Plots (Uses Grouped Abundance) ==========================
+# ============ 1. Selects Columns From Main Grouped Matrix =========
 #== selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`)
@@ -369,14 +370,20 @@ plot_mfuzz <- function(x) {
               cl=cl,
               mfrow=c(3,3),
               time.labels = c(0,1,6,9,24,72,168,336),
+              col.main = ,
               min.mem=0.5,
   )
 }
 
+# plots mfuzz for Set 1
 plot_mfuzz(S1_LI_eSet)
 plot_mfuzz(S1_NL_eSet)
+
+# plots mfuzz for Set 2
 plot_mfuzz(S2_LI_eSet)
 plot_mfuzz(S2_NL_eSet)
+
+# plots mfuzz for Set 3
 plot_mfuzz(S3_LI_eSet)
 plot_mfuzz(S3_NL_eSet)
 
@@ -391,7 +398,8 @@ acore <- acore(grouped_combined_GS_S3_eSet.s,cl,min.acore=0)
 # (where the assignment is based on the top scoring cluster)
 acore_list <- do.call(rbind, lapply(seq_along(acore), function(i){ data.frame(CLUSTER=i, acore[[i]])}))
 
-#============ Metaboanalyst ================
+
+# =========== Metaboanalyst Volcano Plot ================
 {
   # initializing object
   mSet <- InitDataObjects("pktable", "stat", FALSE)
