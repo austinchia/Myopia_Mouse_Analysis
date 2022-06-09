@@ -11,6 +11,7 @@ library(stringr)
 library(marray)
 library(ggplot2)
 library(janitor)
+library(IMIFA)
 
 # ============== 1. Reads Raw Data ===================
 
@@ -79,12 +80,15 @@ Retina_WP_S3 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', s
     relocate(S3_NL_D14, .after = `S3_NL_D7`)
 }
 
+# ============== 3. Combines 3 Sets And Cleans Data ======
+
 # combines all 3 sets into 1 dataset 
 # (left joins to S3 because it has most no of proteins)
 ratio_combined <- left_join(Retina_WP_S3, Retina_WP_S2, by = 'Accession') %>%
   left_join(Retina_WP_S1, by = 'Accession') %>%
   na.omit()
 
+# convert blanks to NA
 ratio_combined <- ratio_combined %>% 
   mutate_all(na_if,"")
 
@@ -94,6 +98,7 @@ ratio_combined$Accession <- sapply(strsplit(ratio_combined$Accession,"-"), `[`, 
 # exports accession numbers to upload to Uniprot
 fwrite(data.frame(ratio_combined$Accession), "test.csv", sep = ",")
 
+# ============== 4. Combines Uniprot Data To Combined Matrix
 gene_symbol <- fread("test_map.csv",sep=',')
 
 # splits gene symbol by break
@@ -105,7 +110,8 @@ ratio_combined_no_na <- left_join(ratio_combined, gene_symbol_map, by="Accession
   relocate(`Gene Symbol`, .after = `Accession`) %>%
   na.omit()
 
-fwrite(ratio_combined_no_na, "abund_ratio_combined.csv", sep = ",")
+# exports combined abundance ratio matrix to csv
+fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
 
 # =========== Volcano Plots - replaces Metaboanalyst ============= ===================
 
@@ -298,7 +304,8 @@ dev.off()
 
 
 
-# =========== Mfuzz Plots (Uses Grouped Abundance) ==========================
+
+# =========== Mfuzz Plots (Uses Grouped Abundance) =============
 # ============ 1. Selects Columns From Main Grouped Matrix =========
 #== selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
@@ -317,11 +324,30 @@ fuzz_S3_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D14`,	`S3_LI_D3`,	`S3_LI_D7`)
 fuzz_S3_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`)
+  
+  
+# ============ Normalizes Data ========================
+
+# runs log10 transformation
+fuzz_S3_NL_no_GS <- fuzz_S3_NL %>%
+  select(-`Gene Symbol`) %>%
+  log10() 
+  # apply(1, median) %>%
+  # sweep(fuzz_S3_NL[,2:9], 1, .,"-") 
+  # pareto_scale(centering = TRUE)
+
+fuzz_S3_NL[,2:9] <- log10(fuzz_S3_NL[,2:9])
+
+# runs median normalization
+rowmed <- apply(fuzz_S3_NL[,2:9],1,median)
+fuzz_S3_NL[,2:9] <- sweep(fuzz_S3_NL[,2:9],1,rowmed,"-")
+
+# runs pareto scaling
+fuzz_S3_NL[,2:9] <- data.frame(pareto_scale(fuzz_S3_NL[,2:9], centering = TRUE))
 
 # ============ 2. Creates Timepoints and Binds to Original Dataframe ====
 
 # == function to create timepoints, convert to eset
-
 create_timepoints <- function(x) {
   # creates timepoints
   timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
