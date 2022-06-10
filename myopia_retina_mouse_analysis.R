@@ -106,9 +106,21 @@ gene_symbol_map <- data.frame(str_split_fixed(gene_symbol$`From	To`, '\t',2))
 colnames(gene_symbol_map) <- c("Accession", "Gene Symbol") 
 
 # merges gene symbol column to main df
-ratio_combined_no_na <- left_join(ratio_combined, gene_symbol_map, by="Accession") %>%
+ratio_combined_no_na <- left_join(ratio_combined, 
+                                  gene_symbol_map, 
+                                  by="Accession") %>%
   relocate(`Gene Symbol`, .after = `Accession`) %>%
-  na.omit()
+  na.omit() %>%
+  
+  # adds number to the end of duplicate gene symbols (ie Sptbn1-2)
+  group_by(`Gene Symbol`) %>%
+  mutate(`GS_count` = 1:n()) %>%
+  mutate(`Gene Symbol` = ifelse(`GS_count` == 1, 
+                                `Gene Symbol`, 
+                                paste0(`Gene Symbol`, "-", `GS_count`))) %>%
+  select(-`GS_count`)
+  
+
 
 # exports combined abundance ratio matrix to csv
 fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
