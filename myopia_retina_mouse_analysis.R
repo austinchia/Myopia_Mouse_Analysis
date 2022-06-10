@@ -325,38 +325,43 @@ dev.off()
 fuzz_S1_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`) %>%
   na_if(0) %>%
-  na.omit()
+  na.omit() %>%
+  column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S1_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_NL_0hr`,	`S1_NL_1hr`,	`S1_NL_6hr`,	`S1_NL_9hr`,	`S1_NL_D1`,	`S1_NL_D14`,	`S1_NL_D3`,	`S1_NL_D7`) %>%
   na_if(0) %>%
-  na.omit()
+  na.omit() %>%
+  column_to_rownames(., var = "Gene Symbol")
 
 
 #== selects S2 for fuzz
 fuzz_S2_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D14`,	`S2_LI_D3`,	`S2_LI_D7`) %>%
   na_if(0) %>%
-  na.omit()
+  na.omit() %>%
+  column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S2_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S2_NL_0hr`,	`S2_NL_1hr`,	`S2_NL_6hr`,	`S2_NL_9hr`,	`S2_NL_D1`,	`S2_NL_D14`,	`S2_NL_D3`,	`S2_NL_D7`) %>%
   na_if(0) %>%
-  na.omit()
+  na.omit() %>%
+  column_to_rownames(., var = "Gene Symbol")
 
 
 #== selects S3 for fuzz
 fuzz_S3_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D14`,	`S3_LI_D3`,	`S3_LI_D7`) %>%
   na_if(0) %>%
-  na.omit()
+  na.omit() %>%
+  column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S3_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`) %>%
   na_if(0) %>%
-  na.omit()
+  na.omit() %>%
+  column_to_rownames(., var = "Gene Symbol")
 
-  
   
 # ============ Normalizes Data ========================
 
@@ -369,16 +374,16 @@ transform_data <- function(x) {
 } 
 
 # applies function to transform data to S1
-fuzz_S1_LI[,2:9] <- transform_data(fuzz_S1_LI[,2:9])
-fuzz_S1_NL[,2:9] <- transform_data(fuzz_S1_NL[,2:9])
+fuzz_S1_LI <- transform_data(fuzz_S1_LI)
+fuzz_S1_NL <- transform_data(fuzz_S1_NL)
 
 # applies function to transform data to S2
-fuzz_S2_LI[,2:9] <- transform_data(fuzz_S2_LI[,2:9])
-fuzz_S2_NL[,2:9] <- transform_data(fuzz_S2_NL[,2:9])
+fuzz_S2_LI <- transform_data(fuzz_S2_LI)
+fuzz_S2_NL <- transform_data(fuzz_S2_NL)
 
 # applies function to transform data to S3
-fuzz_S3_LI[,2:9] <- transform_data(fuzz_S3_LI[,2:9])
-fuzz_S3_NL[,2:9] <- transform_data(fuzz_S3_NL[,2:9])
+fuzz_S3_LI <- transform_data(fuzz_S3_LI)
+fuzz_S3_NL <- transform_data(fuzz_S3_NL)
 
 # # runs log10 transformation
 # fuzz_S1_LI[,2:9] <- log10(fuzz_S1_LI[,2:9])
@@ -395,7 +400,7 @@ fuzz_S3_NL[,2:9] <- transform_data(fuzz_S3_NL[,2:9])
 # function to create timepoints, convert to eset
 create_timepoints <- function(x) {
   # creates timepoints
-  timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
+  timepoint <- data.frame(t(c(0,1,6,9,24,72,168,336)))
   colnames(timepoint) <- colnames(x)
   
   # creates temp table
@@ -429,6 +434,7 @@ m1_S2_NL <- mestimate(S2_NL_eSet)
 m1_S3_LI <- mestimate(S3_LI_eSet)
 m1_S3_NL <- mestimate(S3_NL_eSet)
 
+
 # ============ 4. Plots Mfuzz Plots ======================
 
 plot_mfuzz <- function(x) {
@@ -461,12 +467,12 @@ plot_mfuzz(S3_NL_eSet)
 correlation_matrix <- data.frame(cor(t(cl[[1]])))
 
 #extracts membership values 
-acore <- acore(S3_NL_eSet,cl,min.acore=0)
+acore_S3_NL <- acore(S3_NL_eSet,cl,min.acore=0)
 
-# pull out the scores for the cluster assignments 
-# (where the assignment is based on the top scoring cluster)
-acore_list <- do.call(rbind, lapply(seq_along(acore), function(i){ data.frame(CLUSTER=i, acore[[i]])}))
+# extracts genes for each cluster  
+acore_list <- do.call(rbind, lapply(seq_along(acore_S3_NL), function(i){ data.frame(CLUSTER=i, acore_S3_NL[[i]])}))
 
+# repeat for each set!! (in progress)
 
 # =========== Metaboanalyst Volcano Plot ================
 {
