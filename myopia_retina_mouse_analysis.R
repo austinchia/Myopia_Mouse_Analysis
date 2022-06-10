@@ -321,7 +321,7 @@ dev.off()
 
 # =========== Mfuzz Plots (Uses Grouped Abundance) =============
 # ============ 1. Selects Columns From Main Grouped Matrix =========
-#== selects S1 for fuzz
+# == selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`) %>%
   na_if(0) %>%
@@ -335,7 +335,7 @@ fuzz_S1_NL <- grouped_combined_GS %>%
   column_to_rownames(., var = "Gene Symbol")
 
 
-#== selects S2 for fuzz
+# == selects S2 for fuzz
 fuzz_S2_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D14`,	`S2_LI_D3`,	`S2_LI_D7`) %>%
   na_if(0) %>%
@@ -349,7 +349,7 @@ fuzz_S2_NL <- grouped_combined_GS %>%
   column_to_rownames(., var = "Gene Symbol")
 
 
-#== selects S3 for fuzz
+# == selects S3 for fuzz
 fuzz_S3_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D14`,	`S3_LI_D3`,	`S3_LI_D7`) %>%
   na_if(0) %>%
@@ -460,7 +460,7 @@ plot_mfuzz(S2_NL_eSet)
 plot_mfuzz(S3_LI_eSet)
 plot_mfuzz(S3_NL_eSet)
 
-# ============== 5. Mfuzz Model Validation and Evaluation ==========
+# ============ 5. Mfuzz Model Validation and Evaluation ==========
 
 # creates correlation matrix between cluster centroids
 # (no more than 0.85)
