@@ -1,3 +1,7 @@
+# About
+# This script reads in raw data > preprocesses data > to form a data matrix
+# Data matrix is used for further stats analysis
+# ============== Loads Packages =======
 library(readxl)
 library(MetaboAnalystR)
 library(dplyr)
@@ -120,12 +124,10 @@ ratio_combined_no_na <- left_join(ratio_combined,
                                 paste0(`Gene Symbol`, "-", `GS_count`))) %>%
   select(-`GS_count`)
   
-
-
 # exports combined abundance ratio matrix to csv
 fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
 
-# =========== Volcano Plots - replaces Metaboanalyst ============= ===================
+# =========== Volcano Plots - replaces Metaboanalyst =======
 
 grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
 
@@ -321,45 +323,76 @@ dev.off()
 # ============ 1. Selects Columns From Main Grouped Matrix =========
 #== selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`)
+  select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`) %>%
+  na_if(0) %>%
+  na.omit()
+
 fuzz_S1_NL <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S1_NL_0hr`,	`S1_NL_1hr`,	`S1_NL_6hr`,	`S1_NL_9hr`,	`S1_NL_D1`,	`S1_NL_D14`,	`S1_NL_D3`,	`S1_NL_D7`)
+  select(`Gene Symbol`, `S1_NL_0hr`,	`S1_NL_1hr`,	`S1_NL_6hr`,	`S1_NL_9hr`,	`S1_NL_D1`,	`S1_NL_D14`,	`S1_NL_D3`,	`S1_NL_D7`) %>%
+  na_if(0) %>%
+  na.omit()
+
 
 #== selects S2 for fuzz
 fuzz_S2_LI <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D14`,	`S2_LI_D3`,	`S2_LI_D7`)
+  select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D14`,	`S2_LI_D3`,	`S2_LI_D7`) %>%
+  na_if(0) %>%
+  na.omit()
+
 fuzz_S2_NL <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S2_NL_0hr`,	`S2_NL_1hr`,	`S2_NL_6hr`,	`S2_NL_9hr`,	`S2_NL_D1`,	`S2_NL_D14`,	`S2_NL_D3`,	`S2_NL_D7`)
+  select(`Gene Symbol`, `S2_NL_0hr`,	`S2_NL_1hr`,	`S2_NL_6hr`,	`S2_NL_9hr`,	`S2_NL_D1`,	`S2_NL_D14`,	`S2_NL_D3`,	`S2_NL_D7`) %>%
+  na_if(0) %>%
+  na.omit()
+
 
 #== selects S3 for fuzz
 fuzz_S3_LI <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D14`,	`S3_LI_D3`,	`S3_LI_D7`)
+  select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D14`,	`S3_LI_D3`,	`S3_LI_D7`) %>%
+  na_if(0) %>%
+  na.omit()
+
 fuzz_S3_NL <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`)
+  select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`) %>%
+  na_if(0) %>%
+  na.omit()
+
   
   
 # ============ Normalizes Data ========================
 
-# runs log10 transformation
-fuzz_S3_NL_no_GS <- fuzz_S3_NL %>%
-  select(-`Gene Symbol`) %>%
-  log10() 
-  # apply(1, median) %>%
-  # sweep(fuzz_S3_NL[,2:9], 1, .,"-") 
-  # pareto_scale(centering = TRUE)
+# function for log transform, median norm, and pareto scale
+transform_data <- function(x) {
+  x <- log10(x)
+  rowmed <- apply(x,1,median)
+  x <- sweep(x,1,rowmed,"-")
+  x <- data.frame(pareto_scale(x, centering = TRUE))
+} 
 
-fuzz_S3_NL[,2:9] <- log10(fuzz_S3_NL[,2:9])
+# applies function to transform data to S1
+fuzz_S1_LI[,2:9] <- transform_data(fuzz_S1_LI[,2:9])
+fuzz_S1_NL[,2:9] <- transform_data(fuzz_S1_NL[,2:9])
 
-# runs median normalization
-rowmed <- apply(fuzz_S3_NL[,2:9],1,median)
-fuzz_S3_NL[,2:9] <- sweep(fuzz_S3_NL[,2:9],1,rowmed,"-")
+# applies function to transform data to S2
+fuzz_S2_LI[,2:9] <- transform_data(fuzz_S2_LI[,2:9])
+fuzz_S2_NL[,2:9] <- transform_data(fuzz_S2_NL[,2:9])
 
-# runs pareto scaling
-fuzz_S3_NL[,2:9] <- data.frame(pareto_scale(fuzz_S3_NL[,2:9], centering = TRUE))
+# applies function to transform data to S3
+fuzz_S3_LI[,2:9] <- transform_data(fuzz_S3_LI[,2:9])
+fuzz_S3_NL[,2:9] <- transform_data(fuzz_S3_NL[,2:9])
+
+# # runs log10 transformation
+# fuzz_S1_LI[,2:9] <- log10(fuzz_S1_LI[,2:9])
+# 
+# # runs median normalization
+# rowmed <- apply(fuzz_S3_NL[,2:9],1,median)
+# fuzz_S3_NL[,2:9] <- sweep(fuzz_S3_NL[,2:9],1,rowmed,"-")
+# 
+# # runs pareto scaling
+# fuzz_S3_NL[,2:9] <- data.frame(pareto_scale(fuzz_S3_NL[,2:9], centering = TRUE))
 
 # ============ 2. Creates Timepoints and Binds to Original Dataframe ====
 
-# == function to create timepoints, convert to eset
+# function to create timepoints, convert to eset
 create_timepoints <- function(x) {
   # creates timepoints
   timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
@@ -378,7 +411,7 @@ create_timepoints <- function(x) {
   
 }
 
-# runs create_timepoints
+# runs create_timepoints function
 S1_LI_eSet <- create_timepoints(fuzz_S1_LI)
 S1_NL_eSet <- create_timepoints(fuzz_S1_NL)
 
@@ -428,7 +461,7 @@ plot_mfuzz(S3_NL_eSet)
 correlation_matrix <- data.frame(cor(t(cl[[1]])))
 
 #extracts membership values 
-acore <- acore(grouped_combined_GS_S3_eSet.s,cl,min.acore=0)
+acore <- acore(S3_NL_eSet,cl,min.acore=0)
 
 # pull out the scores for the cluster assignments 
 # (where the assignment is based on the top scoring cluster)
