@@ -16,6 +16,7 @@ library(marray)
 library(ggplot2)
 library(janitor)
 library(IMIFA)
+library(tidyverse)
 
 # ============== 1. Reads Raw Data ===================
 
@@ -103,6 +104,7 @@ ratio_combined$Accession <- sapply(strsplit(ratio_combined$Accession,"-"), `[`, 
 fwrite(data.frame(ratio_combined$Accession), "test.csv", sep = ",")
 
 # ============== 4. Combines Uniprot Data To Combined Matrix
+# reads in Gene Symbol table downloaded from Uniprot
 gene_symbol <- fread("test_map.csv",sep=',')
 
 # splits gene symbol by break
@@ -324,45 +326,60 @@ dev.off()
 # == selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`) %>%
+  # replaces 0 with NA
   na_if(0) %>%
+  # removes NAs
   na.omit() %>%
+  # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S1_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_NL_0hr`,	`S1_NL_1hr`,	`S1_NL_6hr`,	`S1_NL_9hr`,	`S1_NL_D1`,	`S1_NL_D14`,	`S1_NL_D3`,	`S1_NL_D7`) %>%
+  # replaces 0 with NA
   na_if(0) %>%
+  # removes NAs
   na.omit() %>%
+  # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
-
 
 # == selects S2 for fuzz
 fuzz_S2_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D14`,	`S2_LI_D3`,	`S2_LI_D7`) %>%
+  # replaces 0 with NA
   na_if(0) %>%
+  # removes NAs
   na.omit() %>%
+  # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S2_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S2_NL_0hr`,	`S2_NL_1hr`,	`S2_NL_6hr`,	`S2_NL_9hr`,	`S2_NL_D1`,	`S2_NL_D14`,	`S2_NL_D3`,	`S2_NL_D7`) %>%
+  # replaces 0 with NA
   na_if(0) %>%
+  # removes NAs
   na.omit() %>%
+  # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
-
 
 # == selects S3 for fuzz
 fuzz_S3_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D14`,	`S3_LI_D3`,	`S3_LI_D7`) %>%
+  # replaces 0 with NA
   na_if(0) %>%
+  # removes NAs
   na.omit() %>%
+  # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S3_NL <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`) %>%
+  # replaces 0 with NA
   na_if(0) %>%
+  # removes NAs
   na.omit() %>%
+  # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
 
-  
 # ============ Normalizes Data ========================
 
 # function for log transform, median norm, and pareto scale
@@ -464,15 +481,51 @@ plot_mfuzz(S3_NL_eSet)
 
 # creates correlation matrix between cluster centroids
 # (no more than 0.85)
-correlation_matrix <- data.frame(cor(t(cl[[1]])))
+# correlation_matrix <- data.frame(cor(t(cl[[1]])))
 
-#extracts membership values 
-acore_S3_NL <- acore(S3_NL_eSet,cl,min.acore=0)
+# creates function to extract genes (acore list) in each cluster
+get_genes <- function(x) {
+  acore_x <- acore(x,cl,min.acore=0)
+  do.call(rbind, lapply(seq_along(acore_x), 
+                        function(i){ data.frame(CLUSTER=i, 
+                                                acore_x[[i]])}))
+}
 
-# extracts genes for each cluster  
-acore_list <- do.call(rbind, lapply(seq_along(acore_S3_NL), function(i){ data.frame(CLUSTER=i, acore_S3_NL[[i]])}))
+# uses get_genes function to extract acore list
+S1_LI_acore_list <- get_genes(S1_LI_eSet)
+S1_NL_acore_list <- get_genes(S1_NL_eSet)
+S2_LI_acore_list <- get_genes(S2_LI_eSet)
+S2_NL_acore_list <- get_genes(S2_NL_eSet)
+S3_LI_acore_list <- get_genes(S3_LI_eSet)
+S3_NL_acore_list <- get_genes(S3_NL_eSet)
 
-# repeat for each set!! (in progress)
+# # #extracts membership values 
+# acore_S3_NL <- acore(S3_NL_eSet,cl,min.acore=0)
+# # # extracts genes for each cluster  
+# acore_list <- do.call(rbind, lapply(seq_along(acore_S3_NL), function(i){ data.frame(CLUSTER=i, acore_S3_NL[[i]])}))
+
+# creates function to join acore list to abundance by gene symbol
+combine_acore <- function(abundance_df, acore_list) {
+  acore_combined <- left_join(rownames_to_column(abundance_df), 
+            acore_list, 
+            by=c("rowname" = "NAME"))
+  names(acore_combined)[names(acore_combined) == 'rowname'] <- 'Gene Symbol'
+  return(acore_combined)
+}
+
+# joins acore list with abundance ratios 
+
+# joins S1
+S1_LI_acore_list_combined <- combine_acore(fuzz_S1_LI, S1_LI_acore_list)
+S1_NL_acore_list_combined <- combine_acore(fuzz_S1_NL, S1_NL_acore_list)
+
+# joins S2
+S2_LI_acore_list_combined <- combine_acore(fuzz_S2_LI, S2_LI_acore_list)
+S2_NL_acore_list_combined <- combine_acore(fuzz_S2_NL, S2_NL_acore_list)
+
+# joins S3
+S3_LI_acore_list_combined <- combine_acore(fuzz_S3_LI, S3_LI_acore_list)
+S3_NL_acore_list_combined <- combine_acore(fuzz_S3_NL, S3_NL_acore_list)
 
 # =========== Metaboanalyst Volcano Plot ================
 {
