@@ -32,7 +32,7 @@ Retina_WP_S2 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', s
 Retina_WP_S3 <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S3', na = c("", "NA")) %>%
   select(c(`Accession`,`Abundance Ratios`))
 
-# ============== 2. Data Manipulation ===============
+# ============== 2. Manipulates Data  ===============
 # S1 Data manipulation
 {
   # splits string into columns
@@ -129,197 +129,6 @@ ratio_combined_no_na <- left_join(ratio_combined,
 # exports combined abundance ratio matrix to csv
 fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
 
-# =========== Volcano Plots - replaces Metaboanalyst =======
-
-grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
-
-# create groupings for LI and NL to insert at row 1
-
-# selects columns for each timing (ie 1hr)
-{
-  # selects columns for 0hr
-  grouped_0hr <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_0hr', 'S2_LI_0hr', 'S3_LI_0hr', 'S1_NL_0hr', 'S2_NL_0hr', 'S3_NL_0hr')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_0hr_mean' = mean(c(`S1_LI_0hr`,`S2_LI_0hr`,`S3_LI_0hr`))) %>%
-    mutate('NL_0hr_mean' = mean(c(`S1_NL_0hr`,`S2_NL_0hr`,`S3_NL_0hr`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_0hr_mean/NL_0hr_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_0hr`,`S2_LI_0hr`,`S3_LI_0hr`), c(`S1_NL_0hr`,`S2_NL_0hr`,`S3_NL_0hr`))$p.value))
-  
-  
-  # selects columns for 1hr
-  grouped_1hr <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_1hr', 'S2_LI_1hr', 'S3_LI_1hr', 'S1_NL_1hr', 'S2_NL_1hr', 'S3_NL_1hr')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_1hr_mean' = mean(c(`S1_LI_1hr`,`S2_LI_1hr`,`S3_LI_1hr`))) %>%
-    mutate('NL_1hr_mean' = mean(c(`S1_NL_1hr`,`S2_NL_1hr`,`S3_NL_1hr`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_1hr_mean/NL_1hr_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-  
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_1hr`,`S2_LI_1hr`,`S3_LI_1hr`), c(`S1_NL_1hr`,`S2_NL_1hr`,`S3_NL_1hr`))$p.value))
-  
-  # selects columns for 6hr
-  grouped_6hr <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_6hr', 'S2_LI_6hr', 'S3_LI_6hr', 'S1_NL_6hr', 'S2_NL_6hr', 'S3_NL_6hr')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_6hr_mean' = mean(c(`S1_LI_6hr`,`S2_LI_6hr`,`S3_LI_6hr`))) %>%
-    mutate('NL_6hr_mean' = mean(c(`S1_NL_6hr`,`S2_NL_6hr`,`S3_NL_6hr`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_6hr_mean/NL_6hr_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_6hr`,`S2_LI_6hr`,`S3_LI_6hr`), c(`S1_NL_6hr`,`S2_NL_6hr`,`S3_NL_6hr`))$p.value))
-  
-  # selects columns for 9hr
-  grouped_9hr <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_9hr', 'S2_LI_9hr', 'S3_LI_9hr', 'S1_NL_9hr', 'S2_NL_9hr', 'S3_NL_9hr')) %>%
-
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_9hr_mean' = mean(c(`S1_LI_9hr`,`S2_LI_9hr`,`S3_LI_9hr`))) %>%
-    mutate('NL_9hr_mean' = mean(c(`S1_NL_9hr`,`S2_NL_9hr`,`S3_NL_9hr`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_9hr_mean/NL_9hr_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_9hr`,`S2_LI_9hr`,`S3_LI_9hr`), c(`S1_NL_9hr`,`S2_NL_9hr`,`S3_NL_9hr`))$p.value))
-  
-  # selects columns for D1
-  grouped_D1 <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_D1', 'S2_LI_D1', 'S3_LI_D1', 'S1_NL_D1', 'S2_NL_D1', 'S3_NL_D1')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_D1_mean' = mean(c(`S1_LI_D1`,`S2_LI_D1`,`S3_LI_D1`))) %>%
-    mutate('NL_D1_mean' = mean(c(`S1_NL_D1`,`S2_NL_D1`,`S3_NL_D1`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_D1_mean/NL_D1_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D1`,`S2_LI_D1`,`S3_LI_D1`), c(`S1_NL_D1`,`S2_NL_D1`,`S3_NL_D1`))$p.value))
-  
-  # selects columns for D14
-  grouped_D14 <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_D14', 'S2_LI_D14', 'S3_LI_D14', 'S1_NL_D14', 'S2_NL_D14', 'S3_NL_D14')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_D14_mean' = mean(c(`S1_LI_D14`,`S2_LI_D14`,`S3_LI_D14`))) %>%
-    mutate('NL_D14_mean' = mean(c(`S1_NL_D14`,`S2_NL_D14`,`S3_NL_D14`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_D14_mean/NL_D14_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D14`,`S2_LI_D14`,`S3_LI_D14`), c(`S1_NL_D14`,`S2_NL_D14`,`S3_NL_D14`))$p.value))
-  
-  # selects columns for D3
-  grouped_D3 <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_D3', 'S2_LI_D3', 'S3_LI_D3', 'S1_NL_D3', 'S2_NL_D3', 'S3_NL_D3')) %>%
-
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_D3_mean' = mean(c(`S1_LI_D3`,`S2_LI_D3`,`S3_LI_D3`))) %>%
-    mutate('NL_D3_mean' = mean(c(`S1_NL_D3`,`S2_NL_D3`,`S3_NL_D3`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_D3_mean/NL_D3_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D3`,`S2_LI_D3`,`S3_LI_D3`), c(`S1_NL_D3`,`S2_NL_D3`,`S3_NL_D3`))$p.value))
-  
-  # selects columns for D7
-  grouped_D7 <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_D7', 'S2_LI_D7', 'S3_LI_D7', 'S1_NL_D7', 'S2_NL_D7', 'S3_NL_D7')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_D7_mean' = mean(c(`S1_LI_D7`,`S2_LI_D7`,`S3_LI_D7`))) %>%
-    mutate('NL_D7_mean' = mean(c(`S1_NL_D7`,`S2_NL_D7`,`S3_NL_D7`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_D7_mean/NL_D7_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D7`,`S2_LI_D7`,`S3_LI_D7`), c(`S1_NL_D7`,`S2_NL_D7`,`S3_NL_D7`))$p.value))
-
-}
-
-# plots volcano plot
-vol_plot <- function(x) {
-  EnhancedVolcano(x,
-                  lab = rownames(x),
-                  x = 'Log2FC',
-                  y = 'p_value',
-                  title = 'LI / NL',
-                  pCutoff = 0.05,
-                  FCcutoff = 1.0,
-                  pointSize = 3.0,
-                  labSize = 3.0)
-}
-
-# exports plots volcano plots for 7 timings (ie 1hr)
-{ 
-
-png(file="vplot_0hr.png")
-vol_plot(grouped_0hr)
-dev.off()
-
-png(file="vplot_1hr.png")
-vol_plot(grouped_1hr)
-dev.off()
-
-png(file="vplot_6hr.png")
-vol_plot(grouped_6hr)
-dev.off()
-
-png(file="vplot_9hr.png")
-vol_plot(grouped_9hr)
-dev.off()
-
-png(file="vplot_D1.png")
-vol_plot(grouped_D1)
-dev.off()
-
-png(file="vplot_D3.png")
-vol_plot(grouped_D3)
-dev.off()
-
-png(file="vplot_D7.png")
-vol_plot(grouped_D7)
-dev.off()
-
-png(file="vplot_D14.png")
-vol_plot(grouped_D14)
-dev.off()
-  
-}
-
-
-
 
 # =========== Mfuzz Plots (Uses Grouped Abundance) =============
 # ============ 1. Selects Columns From Main Grouped Matrix =========
@@ -380,7 +189,7 @@ fuzz_S3_NL <- grouped_combined_GS %>%
   # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
 
-# ============ Normalizes Data ========================
+# ============ 2. Normalizes Data ========================
 
 # function for log transform, median norm, and pareto scale
 transform_data <- function(x) {
@@ -412,7 +221,7 @@ fuzz_S3_NL <- transform_data(fuzz_S3_NL)
 # # runs pareto scaling
 # fuzz_S3_NL[,2:9] <- data.frame(pareto_scale(fuzz_S3_NL[,2:9], centering = TRUE))
 
-# ============ 2. Creates Timepoints and Binds to Original Dataframe ====
+# ============ 3. Creates Timepoints and Binds to Original Dataframe ====
 
 # function to create timepoints, convert to eset
 create_timepoints <- function(x) {
@@ -443,7 +252,7 @@ S2_NL_eSet <- create_timepoints(fuzz_S2_NL)
 S3_LI_eSet <- create_timepoints(fuzz_S3_LI)
 S3_NL_eSet <- create_timepoints(fuzz_S3_NL)
 
-# ============ 3. Estimates Fuzzifier (ie m1) ================
+# ============ 4. Estimates Fuzzifier (ie m1) ================
 m1_S1_LI <- mestimate(S1_LI_eSet)
 m1_S1_NL <- mestimate(S1_NL_eSet)
 m1_S2_LI <- mestimate(S2_LI_eSet)
@@ -452,7 +261,7 @@ m1_S3_LI <- mestimate(S3_LI_eSet)
 m1_S3_NL <- mestimate(S3_NL_eSet)
 
 
-# ============ 4. Plots Mfuzz Plots ======================
+# ============ 5. Plots Mfuzz Plots ======================
 
 plot_mfuzz <- function(x) {
   cl <- mfuzz(x,c=12,m=m1)
@@ -477,12 +286,13 @@ plot_mfuzz(S2_NL_eSet)
 plot_mfuzz(S3_LI_eSet)
 plot_mfuzz(S3_NL_eSet)
 
-# ============ 5. Mfuzz Model Validation and Evaluation ==========
+# ============ 6. Validates and Evaulates Mfuzz Model ==========
 
 # creates correlation matrix between cluster centroids
 # (no more than 0.85)
 # correlation_matrix <- data.frame(cor(t(cl[[1]])))
 
+# ============ 7. Extracts Gene Lists From Clusters ==========
 # creates function to extract genes (acore list) in each cluster
 get_genes <- function(x) {
   acore_x <- acore(x,cl,min.acore=0)
@@ -514,7 +324,6 @@ combine_acore <- function(abundance_df, acore_list) {
 }
 
 # joins acore list with abundance ratios 
-
 # joins S1
 S1_LI_acore_list_combined <- combine_acore(fuzz_S1_LI, S1_LI_acore_list)
 S1_NL_acore_list_combined <- combine_acore(fuzz_S1_NL, S1_NL_acore_list)
@@ -526,6 +335,200 @@ S2_NL_acore_list_combined <- combine_acore(fuzz_S2_NL, S2_NL_acore_list)
 # joins S3
 S3_LI_acore_list_combined <- combine_acore(fuzz_S3_LI, S3_LI_acore_list)
 S3_NL_acore_list_combined <- combine_acore(fuzz_S3_NL, S3_NL_acore_list)
+
+
+# =========== Volcano Plots - replaces Metaboanalyst =======
+
+grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
+
+# create groupings for LI and NL to insert at row 1
+
+# selects columns for each timing (ie 1hr)
+{
+  # selects columns for 0hr
+  grouped_0hr <- grouped_combined_GS %>%
+    select(c('Gene Symbol', 'S1_LI_0hr', 'S2_LI_0hr', 'S3_LI_0hr', 'S1_NL_0hr', 'S2_NL_0hr', 'S3_NL_0hr')) %>%
+    
+    # gets mean of LI and NL
+    group_by(`Gene Symbol`) %>%
+    mutate('LI_0hr_mean' = mean(c(`S1_LI_0hr`,`S2_LI_0hr`,`S3_LI_0hr`))) %>%
+    mutate('NL_0hr_mean' = mean(c(`S1_NL_0hr`,`S2_NL_0hr`,`S3_NL_0hr`))) %>%
+    
+    # calculates log2 fold change
+    mutate('FC' = LI_0hr_mean/NL_0hr_mean) %>%
+    mutate('Log2FC' = log2(FC)) %>%
+    
+    # calculates p value  
+    mutate('p_value' = as.numeric(t.test(c(`S1_LI_0hr`,`S2_LI_0hr`,`S3_LI_0hr`), c(`S1_NL_0hr`,`S2_NL_0hr`,`S3_NL_0hr`))$p.value))
+  
+  
+  # selects columns for 1hr
+  grouped_1hr <- grouped_combined_GS %>%
+    select(c('Gene Symbol', 'S1_LI_1hr', 'S2_LI_1hr', 'S3_LI_1hr', 'S1_NL_1hr', 'S2_NL_1hr', 'S3_NL_1hr')) %>%
+    
+    # gets mean of LI and NL
+    group_by(`Gene Symbol`) %>%
+    mutate('LI_1hr_mean' = mean(c(`S1_LI_1hr`,`S2_LI_1hr`,`S3_LI_1hr`))) %>%
+    mutate('NL_1hr_mean' = mean(c(`S1_NL_1hr`,`S2_NL_1hr`,`S3_NL_1hr`))) %>%
+    
+    # calculates log2 fold change
+    mutate('FC' = LI_1hr_mean/NL_1hr_mean) %>%
+    mutate('Log2FC' = log2(FC)) %>%
+    
+    # calculates p value  
+    mutate('p_value' = as.numeric(t.test(c(`S1_LI_1hr`,`S2_LI_1hr`,`S3_LI_1hr`), c(`S1_NL_1hr`,`S2_NL_1hr`,`S3_NL_1hr`))$p.value))
+  
+  # selects columns for 6hr
+  grouped_6hr <- grouped_combined_GS %>%
+    select(c('Gene Symbol', 'S1_LI_6hr', 'S2_LI_6hr', 'S3_LI_6hr', 'S1_NL_6hr', 'S2_NL_6hr', 'S3_NL_6hr')) %>%
+    
+    # gets mean of LI and NL
+    group_by(`Gene Symbol`) %>%
+    mutate('LI_6hr_mean' = mean(c(`S1_LI_6hr`,`S2_LI_6hr`,`S3_LI_6hr`))) %>%
+    mutate('NL_6hr_mean' = mean(c(`S1_NL_6hr`,`S2_NL_6hr`,`S3_NL_6hr`))) %>%
+    
+    # calculates log2 fold change
+    mutate('FC' = LI_6hr_mean/NL_6hr_mean) %>%
+    mutate('Log2FC' = log2(FC)) %>%
+    
+    # calculates p value  
+    mutate('p_value' = as.numeric(t.test(c(`S1_LI_6hr`,`S2_LI_6hr`,`S3_LI_6hr`), c(`S1_NL_6hr`,`S2_NL_6hr`,`S3_NL_6hr`))$p.value))
+  
+  # selects columns for 9hr
+  grouped_9hr <- grouped_combined_GS %>%
+    select(c('Gene Symbol', 'S1_LI_9hr', 'S2_LI_9hr', 'S3_LI_9hr', 'S1_NL_9hr', 'S2_NL_9hr', 'S3_NL_9hr')) %>%
+    
+    # gets mean of LI and NL
+    group_by(`Gene Symbol`) %>%
+    mutate('LI_9hr_mean' = mean(c(`S1_LI_9hr`,`S2_LI_9hr`,`S3_LI_9hr`))) %>%
+    mutate('NL_9hr_mean' = mean(c(`S1_NL_9hr`,`S2_NL_9hr`,`S3_NL_9hr`))) %>%
+    
+    # calculates log2 fold change
+    mutate('FC' = LI_9hr_mean/NL_9hr_mean) %>%
+    mutate('Log2FC' = log2(FC)) %>%
+    
+    # calculates p value  
+    mutate('p_value' = as.numeric(t.test(c(`S1_LI_9hr`,`S2_LI_9hr`,`S3_LI_9hr`), c(`S1_NL_9hr`,`S2_NL_9hr`,`S3_NL_9hr`))$p.value))
+  
+  # selects columns for D1
+  grouped_D1 <- grouped_combined_GS %>%
+    select(c('Gene Symbol', 'S1_LI_D1', 'S2_LI_D1', 'S3_LI_D1', 'S1_NL_D1', 'S2_NL_D1', 'S3_NL_D1')) %>%
+    
+    # gets mean of LI and NL
+    group_by(`Gene Symbol`) %>%
+    mutate('LI_D1_mean' = mean(c(`S1_LI_D1`,`S2_LI_D1`,`S3_LI_D1`))) %>%
+    mutate('NL_D1_mean' = mean(c(`S1_NL_D1`,`S2_NL_D1`,`S3_NL_D1`))) %>%
+    
+    # calculates log2 fold change
+    mutate('FC' = LI_D1_mean/NL_D1_mean) %>%
+    mutate('Log2FC' = log2(FC)) %>%
+    
+    # calculates p value  
+    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D1`,`S2_LI_D1`,`S3_LI_D1`), c(`S1_NL_D1`,`S2_NL_D1`,`S3_NL_D1`))$p.value))
+  
+  # selects columns for D14
+  grouped_D14 <- grouped_combined_GS %>%
+    select(c('Gene Symbol', 'S1_LI_D14', 'S2_LI_D14', 'S3_LI_D14', 'S1_NL_D14', 'S2_NL_D14', 'S3_NL_D14')) %>%
+    
+    # gets mean of LI and NL
+    group_by(`Gene Symbol`) %>%
+    mutate('LI_D14_mean' = mean(c(`S1_LI_D14`,`S2_LI_D14`,`S3_LI_D14`))) %>%
+    mutate('NL_D14_mean' = mean(c(`S1_NL_D14`,`S2_NL_D14`,`S3_NL_D14`))) %>%
+    
+    # calculates log2 fold change
+    mutate('FC' = LI_D14_mean/NL_D14_mean) %>%
+    mutate('Log2FC' = log2(FC)) %>%
+    
+    # calculates p value  
+    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D14`,`S2_LI_D14`,`S3_LI_D14`), c(`S1_NL_D14`,`S2_NL_D14`,`S3_NL_D14`))$p.value))
+  
+  # selects columns for D3
+  grouped_D3 <- grouped_combined_GS %>%
+    select(c('Gene Symbol', 'S1_LI_D3', 'S2_LI_D3', 'S3_LI_D3', 'S1_NL_D3', 'S2_NL_D3', 'S3_NL_D3')) %>%
+    
+    # gets mean of LI and NL
+    group_by(`Gene Symbol`) %>%
+    mutate('LI_D3_mean' = mean(c(`S1_LI_D3`,`S2_LI_D3`,`S3_LI_D3`))) %>%
+    mutate('NL_D3_mean' = mean(c(`S1_NL_D3`,`S2_NL_D3`,`S3_NL_D3`))) %>%
+    
+    # calculates log2 fold change
+    mutate('FC' = LI_D3_mean/NL_D3_mean) %>%
+    mutate('Log2FC' = log2(FC)) %>%
+    
+    # calculates p value  
+    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D3`,`S2_LI_D3`,`S3_LI_D3`), c(`S1_NL_D3`,`S2_NL_D3`,`S3_NL_D3`))$p.value))
+  
+  # selects columns for D7
+  grouped_D7 <- grouped_combined_GS %>%
+    select(c('Gene Symbol', 'S1_LI_D7', 'S2_LI_D7', 'S3_LI_D7', 'S1_NL_D7', 'S2_NL_D7', 'S3_NL_D7')) %>%
+    
+    # gets mean of LI and NL
+    group_by(`Gene Symbol`) %>%
+    mutate('LI_D7_mean' = mean(c(`S1_LI_D7`,`S2_LI_D7`,`S3_LI_D7`))) %>%
+    mutate('NL_D7_mean' = mean(c(`S1_NL_D7`,`S2_NL_D7`,`S3_NL_D7`))) %>%
+    
+    # calculates log2 fold change
+    mutate('FC' = LI_D7_mean/NL_D7_mean) %>%
+    mutate('Log2FC' = log2(FC)) %>%
+    
+    # calculates p value  
+    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D7`,`S2_LI_D7`,`S3_LI_D7`), c(`S1_NL_D7`,`S2_NL_D7`,`S3_NL_D7`))$p.value))
+  
+}
+
+# plots volcano plot
+vol_plot <- function(x) {
+  EnhancedVolcano(x,
+                  lab = rownames(x),
+                  x = 'Log2FC',
+                  y = 'p_value',
+                  title = 'LI / NL',
+                  pCutoff = 0.05,
+                  FCcutoff = 1.0,
+                  pointSize = 3.0,
+                  labSize = 3.0)
+}
+
+# exports plots volcano plots for 7 timings (ie 1hr)
+{ 
+  
+  png(file="vplot_0hr.png")
+  vol_plot(grouped_0hr)
+  dev.off()
+  
+  png(file="vplot_1hr.png")
+  vol_plot(grouped_1hr)
+  dev.off()
+  
+  png(file="vplot_6hr.png")
+  vol_plot(grouped_6hr)
+  dev.off()
+  
+  png(file="vplot_9hr.png")
+  vol_plot(grouped_9hr)
+  dev.off()
+  
+  png(file="vplot_D1.png")
+  vol_plot(grouped_D1)
+  dev.off()
+  
+  png(file="vplot_D3.png")
+  vol_plot(grouped_D3)
+  dev.off()
+  
+  png(file="vplot_D7.png")
+  vol_plot(grouped_D7)
+  dev.off()
+  
+  png(file="vplot_D14.png")
+  vol_plot(grouped_D14)
+  dev.off()
+  
+}
+
+
+
+
 
 # =========== Metaboanalyst Volcano Plot ================
 {
