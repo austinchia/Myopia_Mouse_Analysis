@@ -172,7 +172,7 @@ fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
 # ============ 1. Selects Columns From Main Grouped Matrix =========
 # == selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D14`,	`S1_LI_D3`,	`S1_LI_D7`) %>%
+  select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D3`,	`S1_LI_D7`,	`S1_LI_D14`) %>%
   # replaces 0 with NA
   na_if(0) %>%
   # removes NAs
@@ -181,7 +181,7 @@ fuzz_S1_LI <- grouped_combined_GS %>%
   column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S1_NL <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S1_NL_0hr`,	`S1_NL_1hr`,	`S1_NL_6hr`,	`S1_NL_9hr`,	`S1_NL_D1`,	`S1_NL_D14`,	`S1_NL_D3`,	`S1_NL_D7`) %>%
+  select(`Gene Symbol`, `S1_NL_0hr`,	`S1_NL_1hr`,	`S1_NL_6hr`,	`S1_NL_9hr`,	`S1_NL_D1`,	`S1_NL_D3`,	`S1_NL_D7`,	`S1_NL_D14`) %>%
   # replaces 0 with NA
   na_if(0) %>%
   # removes NAs
@@ -191,7 +191,7 @@ fuzz_S1_NL <- grouped_combined_GS %>%
 
 # == selects S2 for fuzz
 fuzz_S2_LI <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D14`,	`S2_LI_D3`,	`S2_LI_D7`) %>%
+  select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D3`,	`S2_LI_D7`,	`S2_LI_D14`) %>%
   # replaces 0 with NA
   na_if(0) %>%
   # removes NAs
@@ -200,7 +200,7 @@ fuzz_S2_LI <- grouped_combined_GS %>%
   column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S2_NL <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S2_NL_0hr`,	`S2_NL_1hr`,	`S2_NL_6hr`,	`S2_NL_9hr`,	`S2_NL_D1`,	`S2_NL_D14`,	`S2_NL_D3`,	`S2_NL_D7`) %>%
+  select(`Gene Symbol`, `S2_NL_0hr`,	`S2_NL_1hr`,	`S2_NL_6hr`,	`S2_NL_9hr`,	`S2_NL_D1`,	`S2_NL_D3`,	`S2_NL_D7`,	`S2_NL_D14`) %>%
   # replaces 0 with NA
   na_if(0) %>%
   # removes NAs
@@ -210,7 +210,7 @@ fuzz_S2_NL <- grouped_combined_GS %>%
 
 # == selects S3 for fuzz
 fuzz_S3_LI <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D14`,	`S3_LI_D3`,	`S3_LI_D7`) %>%
+  select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D3`,	`S3_LI_D7`,	`S3_LI_D14`) %>%
   # replaces 0 with NA
   na_if(0) %>%
   # removes NAs
@@ -219,13 +219,97 @@ fuzz_S3_LI <- grouped_combined_GS %>%
   column_to_rownames(., var = "Gene Symbol")
 
 fuzz_S3_NL <- grouped_combined_GS %>%
-  select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D14`,	`S3_NL_D3`,	`S3_NL_D7`) %>%
+  select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D3`,	`S3_NL_D7`, `S3_NL_D14`) %>%
   # replaces 0 with NA
   na_if(0) %>%
   # removes NAs
   na.omit() %>%
   # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
+
+
+
+# == Combines all LI grouped abundance ==
+{
+  fuzz_S1_LI_with_GS <- grouped_combined_GS %>%
+    select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D3`,	`S1_LI_D7`,	`S1_LI_D14`) %>%
+    # replaces 0 with NA
+    na_if(0) %>%
+    # removes NAs
+    na.omit()
+  
+  fuzz_S2_LI_with_GS <- grouped_combined_GS %>%
+    select(`Gene Symbol`, `S2_LI_0hr`,	`S2_LI_1hr`,	`S2_LI_6hr`,	`S2_LI_9hr`,	`S2_LI_D1`,	`S2_LI_D3`,	`S2_LI_D7`,	`S2_LI_D14`) %>%
+    # replaces 0 with NA
+    na_if(0) %>%
+    # removes NAs
+    na.omit()
+  
+  fuzz_S3_LI_with_GS <- grouped_combined_GS %>%
+    select(`Gene Symbol`, `S3_LI_0hr`,	`S3_LI_1hr`,	`S3_LI_6hr`,	`S3_LI_9hr`,	`S3_LI_D1`,	`S3_LI_D3`,	`S3_LI_D7`,	`S3_LI_D14`) %>%
+    # replaces 0 with NA
+    na_if(0) %>%
+    # removes NAs
+    na.omit()
+  
+  fuzz_combined_LI <- left_join(fuzz_S3_LI_with_GS, fuzz_S2_LI_with_GS, by = 'Gene Symbol') %>%
+    left_join(fuzz_S1_LI_with_GS, by = 'Gene Symbol') %>%
+    na.omit() %>%
+    column_to_rownames(., var = "Gene Symbol")
+  }
+
+
+# == Combines all NL grouped abundance ==
+{
+  fuzz_S1_NL_with_GS <- grouped_combined_GS %>%
+    select(`Gene Symbol`, `S1_NL_0hr`,	`S1_NL_1hr`,	`S1_NL_6hr`,	`S1_NL_9hr`,	`S1_NL_D1`,	`S1_NL_D3`,	`S1_NL_D7`,	`S1_NL_D14`) %>%
+    # replaces 0 with NA
+    na_if(0) %>%
+    # removes NAs
+    na.omit()
+  
+  fuzz_S2_NL_with_GS <- grouped_combined_GS %>%
+    select(`Gene Symbol`, `S2_NL_0hr`,	`S2_NL_1hr`,	`S2_NL_6hr`,	`S2_NL_9hr`,	`S2_NL_D1`,	`S2_NL_D3`,	`S2_NL_D7`,	`S2_NL_D14`) %>%
+    # replaces 0 with NA
+    na_if(0) %>%
+    # removes NAs
+    na.omit()
+  
+  fuzz_S3_NL_with_GS <- grouped_combined_GS %>%
+    select(`Gene Symbol`, `S3_NL_0hr`,	`S3_NL_1hr`,	`S3_NL_6hr`,	`S3_NL_9hr`,	`S3_NL_D1`,	`S3_NL_D3`,	`S3_NL_D7`,	`S3_NL_D14`) %>%
+    # replaces 0 with NA
+    na_if(0) %>%
+    # removes NAs
+    na.omit()
+  
+  fuzz_combined_NL <- left_join(fuzz_S3_NL_with_GS, fuzz_S2_NL_with_GS, by = 'Gene Symbol') %>%
+    left_join(fuzz_S1_NL_with_GS, by = 'Gene Symbol') %>%
+    na.omit()
+  }
+
+# combines all 3 LI sets and calculates average
+LI_average <- fuzz_combined_LI %>%
+  mutate('LI_0hr_mean' = rowMeans(subset(., select = c(`S1_LI_0hr`,`S2_LI_0hr`,`S3_LI_0hr`)))) %>%
+  mutate('LI_1hr_mean' = rowMeans(subset(., select = c(`S1_LI_1hr`,`S2_LI_1hr`,`S3_LI_1hr`)))) %>%
+  mutate('LI_6hr_mean' = rowMeans(subset(., select = c(`S1_LI_6hr`,`S2_LI_6hr`,`S3_LI_6hr`)))) %>%
+  mutate('LI_9hr_mean' = rowMeans(subset(., select = c(`S1_LI_9hr`,`S2_LI_9hr`,`S3_LI_9hr`)))) %>%
+  mutate('LI_D1_mean' = rowMeans(subset(., select = c(`S1_LI_D1`,`S2_LI_D1`,`S3_LI_D1`)))) %>%
+  mutate('LI_D3_mean' = rowMeans(subset(., select = c(`S1_LI_D3`,`S2_LI_D3`,`S3_LI_D3`)))) %>%
+  mutate('LI_D7_mean' = rowMeans(subset(., select = c(`S1_LI_D7`,`S2_LI_D7`,`S3_LI_D7`)))) %>%
+  mutate('LI_D14_mean' = rowMeans(subset(., select = c(`S1_LI_D14`,`S2_LI_D14`,`S3_LI_D14`)))) %>%
+  select(`LI_0hr_mean`, `LI_1hr_mean`, `LI_6hr_mean`, `LI_9hr_mean`, `LI_D1_mean`, `LI_D3_mean`, `LI_D7_mean`, `LI_D14_mean`)
+
+# combines all 3 NL sets and calculates average
+NL_average <- fuzz_combined_NL %>%
+  mutate('NL_0hr_mean' = rowMeans(subset(., select = c(`S1_NL_0hr`,`S2_NL_0hr`,`S3_NL_0hr`)))) %>%
+  mutate('NL_1hr_mean' = rowMeans(subset(., select = c(`S1_NL_1hr`,`S2_NL_1hr`,`S3_NL_1hr`)))) %>%
+  mutate('NL_6hr_mean' = rowMeans(subset(., select = c(`S1_NL_6hr`,`S2_NL_6hr`,`S3_NL_6hr`)))) %>%
+  mutate('NL_9hr_mean' = rowMeans(subset(., select = c(`S1_NL_9hr`,`S2_NL_9hr`,`S3_NL_9hr`)))) %>%
+  mutate('NL_D1_mean' = rowMeans(subset(., select = c(`S1_NL_D1`,`S2_NL_D1`,`S3_NL_D1`)))) %>%
+  mutate('NL_D3_mean' = rowMeans(subset(., select = c(`S1_NL_D3`,`S2_NL_D3`,`S3_NL_D3`)))) %>%
+  mutate('NL_D7_mean' = rowMeans(subset(., select = c(`S1_NL_D7`,`S2_NL_D7`,`S3_NL_D7`)))) %>%
+  mutate('NL_D14_mean' = rowMeans(subset(., select = c(`S1_NL_D14`,`S2_NL_D14`,`S3_NL_D14`)))) %>%
+  select(`NL_0hr_mean`, `NL_1hr_mean`, `NL_6hr_mean`, `NL_9hr_mean`, `NL_D1_mean`, `NL_D3_mean`, `NL_D7_mean`, `NL_D14_mean`)
 
 
 # # function for log transform, median norm, and pareto scale
@@ -279,6 +363,9 @@ S2_NL_eSet <- create_timepoints(fuzz_S2_NL)
 S3_LI_eSet <- create_timepoints(fuzz_S3_LI)
 S3_NL_eSet <- create_timepoints(fuzz_S3_NL)
 
+LI_average_eSet <- create_timepoints(LI_average)
+NL_average_eSet <- create_timepoints(NL_average)
+
 # ============ 3. Scales Data ========================
 
 # scales data
@@ -291,8 +378,13 @@ S2_NL_eSet <- standardise(S2_NL_eSet)
 S3_LI_eSet <- standardise(S3_LI_eSet)
 S3_NL_eSet <- standardise(S3_NL_eSet)
 
+# normalizes LI average
+LI_average_eSet <- standardise(LI_average_eSet)
+# normalizes LI average
+NL_average_eSet <- standardise(NL_average_eSet)
+
 # plots scree plot - determine no of centroids
-Dmin(S2_NL_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
+# Dmin(LI_average_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
 
 # ============ 4. Estimates Fuzzifier (ie m1) ================
 m1_S1_LI <- mestimate(S1_LI_eSet)
@@ -302,30 +394,78 @@ m1_S2_NL <- mestimate(S2_NL_eSet)
 m1_S3_LI <- mestimate(S3_LI_eSet)
 m1_S3_NL <- mestimate(S3_NL_eSet)
 
+# estimates fuzzifier for LI and NL (all sets)
+m1_average_LI <- mestimate(LI_average_eSet)
+m1_average_NL <- mestimate(NL_average_eSet)
+
 # ============ 5. Plots Mfuzz Plots ======================
 
 plot_mfuzz <- function(x,m1) {
   cl <- mfuzz(x,c=12,m=m1)
   mfuzz.plot2(x,
               cl=cl,
-              mfrow=c(3,3),
-              time.labels = c(0,1,6,9,24,72,168,336),
+              mfrow=c(4,3),
+              time.labels = c("0hr", "1hr", "6hr", "9hr", "D1", "D3", "D7", "D14"),
               col.main = ,
+              ylab = "Abundance Changes",
+              ylim.set=c(-3,3),
               min.mem=0.5,
+              x11 = FALSE # popup appears when TRUE
   )
 }
 
 # plots mfuzz for Set 1
+png(file = "mfuzz_S1_LI.png",
+    width = 1000,
+    height = 1000,)
 plot_mfuzz(S1_LI_eSet, m1_S1_LI)
+dev.off()
+
+png(file="mfuzz_S1_NL.png",
+    width = 1000,
+    height = 1000,)
 plot_mfuzz(S1_NL_eSet, m1_S1_NL)
+dev.off()
 
 # plots mfuzz for Set 2
+png(file="mfuzz_S2_LI.png",
+    width = 1000,
+    height = 1000,)
 plot_mfuzz(S2_LI_eSet, m1_S2_LI)
+dev.off()
+
+png(file="mfuzz_S2_NL.png",
+    width = 1000,
+    height = 1000,)
 plot_mfuzz(S2_NL_eSet, m1_S2_NL)
+dev.off()
 
 # plots mfuzz for Set 3
+png(file="mfuzz_S3_LI.png",
+    width = 1000,
+    height = 1000,)
 plot_mfuzz(S3_LI_eSet, m1_S3_LI)
+dev.off()
+
+png(file="mfuzz_S3_NL.png",
+    width = 1000,
+    height = 1000,)
 plot_mfuzz(S3_NL_eSet, m1_S3_NL)
+dev.off()
+
+# plots mfuzz for LI (all sets)
+png(file="mfuzz_LI_average.png",
+    width = 1000,
+    height = 1000,)
+plot_mfuzz(LI_average_eSet, m1_average_LI)
+dev.off()
+
+# plots mfuzz for NL (all sets)
+png(file="mfuzz_NL_average.png",
+    width = 1000,
+    height = 1000,)
+plot_mfuzz(NL_average_eSet, m1_average_NL)
+dev.off()
 
 # ============ 6. Validates and Evaulates Mfuzz Model ==========
 
