@@ -17,8 +17,10 @@ library(ggplot2)
 library(janitor)
 library(IMIFA)
 library(tidyverse)
+library(ggVennDiagram)
+library(ggvenn)
 
-# ===================================================================  
+# ===================== A) Using Abundance Ratio
 
 # ============== 1. Reads Raw Data ===================
 
@@ -133,8 +135,85 @@ fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
 
 
 
+
+# ===================== B) Using Grouped Abundance
+
+
+# ===================== A) Using Grouped Abundance
+
+# ============== 1. Reads Raw Data ===================
+
+# reads S1 raw data
+Retina_WP_S1_grouped <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S1', na = c("", "NA")) %>%
+  select(c(`Accession`,`Abundances (Grouped)`))
+
+# reads S2 raw data
+Retina_WP_S2_grouped <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S2', na = c("", "NA")) %>%
+  select(c(`Accession`,`Abundances (Grouped)`))
+
+# reads S3 raw data
+Retina_WP_S3_grouped <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S3', na = c("", "NA")) %>%
+  select(c(`Accession`,`Abundances (Grouped)`))
+
+# ============== 2. Manipulates Data  ===============
+# S1 Data manipulation
+{
+  # splits string into columns
+  Retina_WP_S1_grouped_split <- str_split_fixed(as.character(Retina_WP_S1_grouped$`Abundances (Grouped)`), ';',15)
+  
+  # adds columns to original data
+  Retina_WP_S1_grouped <- cbind(Retina_WP_S1_grouped, Retina_WP_S1_grouped_split)
+  colnames(Retina_WP_S1_grouped) <- c('Accession', 'Abundances (Grouped)', 'S1_LI_1hr','S1_LI_6hr','S1_LI_9hr','S1_LI_D1','S1_LI_D14','S1_LI_D3','S1_LI_D7','S1_NL_0hr','S1_NL_1hr','S1_NL_6hr','S1_NL_9hr','S1_NL_D1','S1_NL_D14','S1_NL_D3','S1_NL_D7')
+  
+  # removes abundance column
+  Retina_WP_S1_grouped <- select(Retina_WP_S1_grouped, -c(`Abundances (Grouped)`)) %>%
+    mutate(S1_LI_0hr = S1_NL_0hr) %>%
+    relocate(S1_LI_0hr, .after = `Accession`) %>%
+    relocate(S1_LI_D14, .after = `S1_LI_D7`) %>%
+    relocate(S1_NL_D14, .after = `S1_NL_D7`)
+  
+}
+
+# S2 Data manipulation
+{
+  # splits string into columns
+  Retina_WP_S2_grouped_split <- str_split_fixed(as.character(Retina_WP_S2_grouped$`Abundances (Grouped)`), ';',15)
+  
+  # adds columns to original data
+  Retina_WP_S2_grouped <- cbind(Retina_WP_S2_grouped, Retina_WP_S2_grouped_split)
+  colnames(Retina_WP_S2_grouped) <- c('Accession', 'Abundances (Grouped)', 'S2_LI_1hr','S2_LI_6hr','S2_LI_9hr','S2_LI_D1','S2_LI_D14','S2_LI_D3','S2_LI_D7','S2_NL_0hr','S2_NL_1hr','S2_NL_6hr','S2_NL_9hr','S2_NL_D1','S2_NL_D14','S2_NL_D3','S2_NL_D7')
+  
+  # removes abundance column
+  Retina_WP_S2_grouped <- select(Retina_WP_S2_grouped, -c(`Abundances (Grouped)`)) %>%
+    mutate(S2_LI_0hr = S2_NL_0hr) %>%
+    relocate(S2_LI_0hr, .after = `Accession`) %>%
+    relocate(S2_LI_D14, .after = `S2_LI_D7`) %>%
+    relocate(S2_NL_D14, .after = `S2_NL_D7`)
+  
+}
+
+# S3 Data manipulation
+{
+  # splits string into columns
+  Retina_WP_S3_grouped_split <- str_split_fixed(as.character(Retina_WP_S3_grouped$`Abundances (Grouped)`), ';',15)
+  
+  # adds columns to original data
+  Retina_WP_S3_grouped <- cbind(Retina_WP_S3_grouped, Retina_WP_S3_grouped_split)
+  colnames(Retina_WP_S3_grouped) <- c('Accession', 'Abundances (Grouped)', 'S3_LI_1hr','S3_LI_6hr','S3_LI_9hr','S3_LI_D1','S3_LI_D14','S3_LI_D3','S3_LI_D7','S3_NL_0hr','S3_NL_1hr','S3_NL_6hr','S3_NL_9hr','S3_NL_D1','S3_NL_D14','S3_NL_D3','S3_NL_D7')
+  
+  # removes abundance column
+  Retina_WP_S3_grouped <- select(Retina_WP_S3_grouped, -c(`Abundances (Grouped)`)) %>%
+    mutate(S3_LI_0hr = S3_NL_0hr) %>%
+    relocate(S3_LI_0hr, .after = `Accession`) %>%
+    relocate(S3_LI_D14, .after = `S3_LI_D7`) %>%
+    relocate(S3_NL_D14, .after = `S3_NL_D7`)
+  
+}
+
 # =========== Mfuzz Plots (Uses Grouped Abundance) =============
 # ============ 1. Selects Columns From Main Grouped Matrix =========
+grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
+
 # == selects S1 for fuzz
 fuzz_S1_LI <- grouped_combined_GS %>%
   select(`Gene Symbol`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D3`,	`S1_LI_D7`,	`S1_LI_D14`) %>%
@@ -498,6 +577,40 @@ S3_NL_acore_list_combined <- combine_acore(fuzz_S3_NL, S3_NL_acore_list)
 # joins the combined sets (LI and NL)
 LI_acore_list_combined <- combine_acore(LI_average, LI_acore_list)
 NL_acore_list_combined <- combine_acore(NL_average, NL_acore_list)
+
+# ============ 8. Creates Venn Diagram for Set Overlap ======
+
+# creates function to prepare venn diagram lists
+plot_venn_diag <- function(Set_1, Set_2, Set_3) {
+  # Creates list of proteins in each set
+  protein_list <- list(
+    Set_1 = Set_1$Accession, 
+    Set_2 = Set_2$Accession, 
+    Set_3 = Set_3$Accession
+  )
+  # Sets names to protein list
+  names(protein_list) <- c("Set 1","Set 2","Set 3")
+  # plots venn diagram
+  ggvenn(
+    protein_list, 
+    fill_color = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF"),
+    stroke_size = 0.5, 
+    text_size = 2,
+    set_name_size = 3
+  )
+}
+
+# plots venn diagram
+plot_venn_diag(Retina_WP_S1_grouped, 
+               Retina_WP_S2_grouped, 
+               Retina_WP_S3_grouped)
+
+# exports venn diagram
+ggsave(
+  "Whole_Protein_Venn.png",
+  plot = last_plot(),
+  bg = 'white'
+  )
 
 
 # =========== Volcano Plots - replaces Metaboanalyst =======
