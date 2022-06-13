@@ -108,7 +108,7 @@ ratio_combined$Accession <- sapply(strsplit(ratio_combined$Accession,"-"), `[`, 
 # exports accession numbers to upload to Uniprot
 fwrite(data.frame(ratio_combined$Accession), "Whole_Protein_Accession.csv", sep = ",")
 
-# ============== 4. Combines Uniprot Data To Combined Matrix
+# ============== 4. Combines Uniprot Data To Combined Matrix ======
 # reads in Gene Symbol table downloaded from Uniprot
 gene_symbol <- fread("Whole_Protein_Accession_Map.csv",sep=',')
 
@@ -358,14 +358,7 @@ NL_average <- fuzz_combined_NL %>%
   select(`NL_0hr_mean`, `NL_1hr_mean`, `NL_6hr_mean`, `NL_9hr_mean`, `NL_D1_mean`, `NL_D3_mean`, `NL_D7_mean`, `NL_D14_mean`)
 
 
-# # function for log transform, median norm, and pareto scale
-# transform_data <- function(x) {
-#   x <- log10(x)
-#   rowmed <- apply(x,1,median)
-#   x <- sweep(x,1,rowmed,"-")
-#   x <- data.frame(pareto_scale(x, centering = TRUE))
-# } 
-# 
+
 # # applies function to scale data to S1
 # fuzz_S1_LI <- standardise(fuzz_S1_LI)
 # fuzz_S1_NL <- standardise(fuzz_S1_NL)
