@@ -18,6 +18,43 @@ library(janitor)
 library(IMIFA)
 library(tidyverse)
 
+
+# in progress
+# ==================================================================
+  grouped_combined_GS_S3 <- fread("grouped_combined_GS_accounted_Mfuzz.csv",sep=',')
+  
+  #creates timepoints
+  timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
+  colnames(timepoint) <- colnames(grouped_combined_GS_S3[,2:10])
+  # binds timepoints to original dataframe
+  test_data <- rbind(timepoint, grouped_combined_GS_S3[,2:10])
+  row.names(test_data)[1]<-"time"
+  tmp <- tempfile()
+  write.table(test_data,file=tmp, sep='\t', quote = F,col.names=NA)
+  #reads temp file as an expression set
+  grouped_combined_GS_S3_eSet <- table2eset(file=tmp)
+  
+  
+  # scales data
+  S2_NL_eSet <- standardise(S2_NL_eSet)
+  # estimates the fuzzifier
+  m1 <- mestimate(S2_NL_eSet)
+  # [1] 1.440961
+  
+  # plots scree plot - determine no of centroids
+  Dmin(S2_NL_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
+
+  # runs c-means fuzzy algorithm 
+  cl <- mfuzz(S2_NL_eSet,c=12,m=m1)
+  # plots mfuzz plot
+  mfuzz.plot2(S2_NL_eSet,
+              cl=cl,
+              mfrow=c(3,3),
+              time.labels = c(0,1,6,9,24,72,168,336),
+              min.mem=0.5,
+  )
+# ===================================================================  
+
 # ============== 1. Reads Raw Data ===================
 
 # reads S1 raw data
@@ -130,6 +167,7 @@ ratio_combined_no_na <- left_join(ratio_combined,
 fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
 
 
+
 # =========== Mfuzz Plots (Uses Grouped Abundance) =============
 # ============ 1. Selects Columns From Main Grouped Matrix =========
 # == selects S1 for fuzz
@@ -189,39 +227,28 @@ fuzz_S3_NL <- grouped_combined_GS %>%
   # set rownames as `Gene Symbol`
   column_to_rownames(., var = "Gene Symbol")
 
-# ============ 2. Normalizes Data ========================
 
-# function for log transform, median norm, and pareto scale
-transform_data <- function(x) {
-  x <- log10(x)
-  rowmed <- apply(x,1,median)
-  x <- sweep(x,1,rowmed,"-")
-  x <- data.frame(pareto_scale(x, centering = TRUE))
-} 
-
-# applies function to transform data to S1
-fuzz_S1_LI <- transform_data(fuzz_S1_LI)
-fuzz_S1_NL <- transform_data(fuzz_S1_NL)
-
-# applies function to transform data to S2
-fuzz_S2_LI <- transform_data(fuzz_S2_LI)
-fuzz_S2_NL <- transform_data(fuzz_S2_NL)
-
-# applies function to transform data to S3
-fuzz_S3_LI <- transform_data(fuzz_S3_LI)
-fuzz_S3_NL <- transform_data(fuzz_S3_NL)
-
-# # runs log10 transformation
-# fuzz_S1_LI[,2:9] <- log10(fuzz_S1_LI[,2:9])
+# # function for log transform, median norm, and pareto scale
+# transform_data <- function(x) {
+#   x <- log10(x)
+#   rowmed <- apply(x,1,median)
+#   x <- sweep(x,1,rowmed,"-")
+#   x <- data.frame(pareto_scale(x, centering = TRUE))
+# } 
 # 
-# # runs median normalization
-# rowmed <- apply(fuzz_S3_NL[,2:9],1,median)
-# fuzz_S3_NL[,2:9] <- sweep(fuzz_S3_NL[,2:9],1,rowmed,"-")
+# # applies function to scale data to S1
+# fuzz_S1_LI <- standardise(fuzz_S1_LI)
+# fuzz_S1_NL <- standardise(fuzz_S1_NL)
 # 
-# # runs pareto scaling
-# fuzz_S3_NL[,2:9] <- data.frame(pareto_scale(fuzz_S3_NL[,2:9], centering = TRUE))
+# # applies function to scale data to S2
+# fuzz_S2_LI <- standardise(fuzz_S2_LI)
+# fuzz_S2_NL <- standardise(fuzz_S2_NL)
+# 
+# # applies function to scale data to S3
+# fuzz_S3_LI <- standardise(fuzz_S3_LI)
+# fuzz_S3_NL <- standardise(fuzz_S3_NL)
 
-# ============ 3. Creates Timepoints and Binds to Original Dataframe ====
+# ============ 2. Creates Timepoints and Binds to Original Dataframe ====
 
 # function to create timepoints, convert to eset
 create_timepoints <- function(x) {
@@ -252,6 +279,21 @@ S2_NL_eSet <- create_timepoints(fuzz_S2_NL)
 S3_LI_eSet <- create_timepoints(fuzz_S3_LI)
 S3_NL_eSet <- create_timepoints(fuzz_S3_NL)
 
+# ============ 3. Scales Data ========================
+
+# scales data
+S1_LI_eSet <- standardise(S1_LI_eSet)
+S1_NL_eSet <- standardise(S1_NL_eSet)
+
+S2_LI_eSet <- standardise(S2_LI_eSet)
+S2_NL_eSet <- standardise(S2_NL_eSet)
+
+S3_LI_eSet <- standardise(S3_LI_eSet)
+S3_NL_eSet <- standardise(S3_NL_eSet)
+
+# plots scree plot - determine no of centroids
+Dmin(S2_NL_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
+
 # ============ 4. Estimates Fuzzifier (ie m1) ================
 m1_S1_LI <- mestimate(S1_LI_eSet)
 m1_S1_NL <- mestimate(S1_NL_eSet)
@@ -260,10 +302,9 @@ m1_S2_NL <- mestimate(S2_NL_eSet)
 m1_S3_LI <- mestimate(S3_LI_eSet)
 m1_S3_NL <- mestimate(S3_NL_eSet)
 
-
 # ============ 5. Plots Mfuzz Plots ======================
 
-plot_mfuzz <- function(x) {
+plot_mfuzz <- function(x,m1) {
   cl <- mfuzz(x,c=12,m=m1)
   mfuzz.plot2(x,
               cl=cl,
@@ -275,16 +316,16 @@ plot_mfuzz <- function(x) {
 }
 
 # plots mfuzz for Set 1
-plot_mfuzz(S1_LI_eSet)
-plot_mfuzz(S1_NL_eSet)
+plot_mfuzz(S1_LI_eSet, m1_S1_LI)
+plot_mfuzz(S1_NL_eSet, m1_S1_NL)
 
 # plots mfuzz for Set 2
-plot_mfuzz(S2_LI_eSet)
-plot_mfuzz(S2_NL_eSet)
+plot_mfuzz(S2_LI_eSet, m1_S2_LI)
+plot_mfuzz(S2_NL_eSet, m1_S2_NL)
 
 # plots mfuzz for Set 3
-plot_mfuzz(S3_LI_eSet)
-plot_mfuzz(S3_NL_eSet)
+plot_mfuzz(S3_LI_eSet, m1_S3_LI)
+plot_mfuzz(S3_NL_eSet, m1_S3_NL)
 
 # ============ 6. Validates and Evaulates Mfuzz Model ==========
 
