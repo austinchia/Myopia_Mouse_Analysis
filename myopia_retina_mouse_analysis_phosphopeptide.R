@@ -51,14 +51,15 @@ Retina_WP_S3_grouped <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet =
 # S1 Data manipulation
 {
   # splits string into columns
-  Retina_WP_S1_grouped_split <- str_split_fixed(as.character(Retina_WP_S1_grouped$`Abundances (Grouped)`), ';',15)
+  Retina_WP_S1_grouped_split <- str_split_fixed(as.character(Retina_WP_S1_grouped$`Abundances (Grouped)`), ';',16)
   
   # adds columns to original data
   Retina_WP_S1_grouped <- cbind(Retina_WP_S1_grouped, Retina_WP_S1_grouped_split)
   colnames(Retina_WP_S1_grouped) <- c("Annotated_Sequence",
                                       "Modifications",
                                       "Master_Protein_Accessions",
-                                      "Abundances (Grouped)", 
+                                      "Abundances (Grouped)",
+                                      "GC_S1",
                                       'S1_LI_1hr','S1_LI_6hr','S1_LI_9hr','S1_LI_D1','S1_LI_D14','S1_LI_D3','S1_LI_D7','S1_NL_0hr','S1_NL_1hr','S1_NL_6hr','S1_NL_9hr','S1_NL_D1','S1_NL_D14','S1_NL_D3','S1_NL_D7')
   
   # removes abundance column
@@ -73,14 +74,15 @@ Retina_WP_S3_grouped <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet =
 # S2 Data manipulation
 {
   # splits string into columns
-  Retina_WP_S2_grouped_split <- str_split_fixed(as.character(Retina_WP_S2_grouped$`Abundances (Grouped)`), ';',15)
+  Retina_WP_S2_grouped_split <- str_split_fixed(as.character(Retina_WP_S2_grouped$`Abundances (Grouped)`), ';',16)
   
   # adds columns to original data
   Retina_WP_S2_grouped <- cbind(Retina_WP_S2_grouped, Retina_WP_S2_grouped_split)
   colnames(Retina_WP_S2_grouped) <- c("Annotated_Sequence",
                                       "Modifications",
                                       "Master_Protein_Accessions",
-                                      "Abundances (Grouped)", 
+                                      "Abundances (Grouped)",
+                                      "GC_S2",
                                       'S2_LI_1hr','S2_LI_6hr','S2_LI_9hr','S2_LI_D1','S2_LI_D14','S2_LI_D3','S2_LI_D7','S2_NL_0hr','S2_NL_1hr','S2_NL_6hr','S2_NL_9hr','S2_NL_D1','S2_NL_D14','S2_NL_D3','S2_NL_D7')
   
   # removes abundance column
@@ -95,7 +97,7 @@ Retina_WP_S3_grouped <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet =
 # S3 Data manipulation
 {
   # splits string into columns
-  Retina_WP_S3_grouped_split <- str_split_fixed(as.character(Retina_WP_S3_grouped$`Abundances (Grouped)`), ';',15)
+  Retina_WP_S3_grouped_split <- str_split_fixed(as.character(Retina_WP_S3_grouped$`Abundances (Grouped)`), ';',16)
   
   # adds columns to original data
   Retina_WP_S3_grouped <- cbind(Retina_WP_S3_grouped, Retina_WP_S3_grouped_split)
@@ -103,6 +105,7 @@ Retina_WP_S3_grouped <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet =
                                       "Modifications",
                                       "Master_Protein_Accessions",
                                       "Abundances (Grouped)", 
+                                      "GC_S3",
                                       'S3_LI_1hr','S3_LI_6hr','S3_LI_9hr','S3_LI_D1','S3_LI_D14','S3_LI_D3','S3_LI_D7','S3_NL_0hr','S3_NL_1hr','S3_NL_6hr','S3_NL_9hr','S3_NL_D1','S3_NL_D14','S3_NL_D3','S3_NL_D7')
   
   # removes abundance column
@@ -134,3 +137,44 @@ ratio_combined$Master_Protein_Accessions.x <- sapply(strsplit(ratio_combined$Mas
 
 # exports accession numbers to upload to Uniprot
 fwrite(data.frame(ratio_combined$`Master_Protein_Accessions.x`), "Phospho_Accession.csv", sep = ",")
+
+# ============== 4. Combines Uniprot Data To Combined Matrix =====
+# reads in Gene Symbol table downloaded from Uniprot
+gene_symbol <- fread("Phospho_Protein_Accession_Map.csv",sep=',')
+
+# splits gene symbol by break
+gene_symbol_map <- data.frame(str_split_fixed(gene_symbol$`From	To`, '\t',2))
+colnames(gene_symbol_map) <- c("Master_Protein_Accessions", "Gene Symbol") 
+
+# merges gene symbol column to main df
+ratio_combined_no_na <- left_join(ratio_combined, 
+                                  gene_symbol_map, 
+                                  by = "Master_Protein_Accessions") %>%
+  relocate(c(`Modifications`,
+             `Master_Protein_Accessions`,
+             `Gene Symbol`),
+           .before = `S2_LI_0hr`) %>%
+  na.omit() %>%
+  
+  # adds number to the end of duplicate gene symbols (ie Sptbn1-2)
+  group_by(`Gene Symbol`) %>%
+  mutate(`GS_count` = 1:n()) %>%
+  mutate(`Gene Symbol` = ifelse(`GS_count` == 1, 
+                                `Gene Symbol`, 
+                                paste0(`Gene Symbol`, "-", `GS_count`))) %>%
+  # adds number to the end of duplicate phosphopeptide (ie Sptbn1-2)
+  group_by(`Annotated_Sequence`) %>%
+  mutate(`seq_count` = 1:n()) %>%
+  mutate(`Annotated_Sequence` = ifelse(`seq_count` == 1, 
+                                `Annotated_Sequence`, 
+                                paste0(`Annotated_Sequence`, "-", `seq_count`))) %>%
+  # removes unused columns
+  select(-c(`GS_count`,
+            `Modifications.x`,
+            `Master_Protein_Accessions.x`,
+            `Modifications.y`,
+            `Master_Protein_Accessions.y`
+            ))
+
+# exports combined abundance ratio matrix to csv
+fwrite(ratio_combined_no_na, "phospho_abund_grouped_combined.csv", sep = ",")
