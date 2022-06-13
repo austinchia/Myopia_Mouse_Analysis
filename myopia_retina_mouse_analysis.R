@@ -1,4 +1,5 @@
 # About
+# This script is used for Whole Protein
 # This script reads in raw data > preprocesses data > to form a data matrix
 # Data matrix is used for further stats analysis
 # ============== Loads Packages =======
@@ -20,7 +21,7 @@ library(tidyverse)
 library(ggVennDiagram)
 library(ggvenn)
 
-# ===================== A) Using Abundance Ratio
+# ====== A) Prepares Data Matrix for Abundance Ratio =====
 
 # ============== 1. Reads Raw Data ===================
 
@@ -105,11 +106,11 @@ ratio_combined <- ratio_combined %>%
 ratio_combined$Accession <- sapply(strsplit(ratio_combined$Accession,"-"), `[`, 1)
 
 # exports accession numbers to upload to Uniprot
-fwrite(data.frame(ratio_combined$Accession), "test.csv", sep = ",")
+fwrite(data.frame(ratio_combined$Accession), "Whole_Protein_Accession.csv", sep = ",")
 
 # ============== 4. Combines Uniprot Data To Combined Matrix
 # reads in Gene Symbol table downloaded from Uniprot
-gene_symbol <- fread("test_map.csv",sep=',')
+gene_symbol <- fread("Whole_Protein_Accession_Map.csv",sep=',')
 
 # splits gene symbol by break
 gene_symbol_map <- data.frame(str_split_fixed(gene_symbol$`From	To`, '\t',2))
@@ -139,7 +140,8 @@ fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
 # ===================== B) Using Grouped Abundance
 
 
-# ===================== A) Using Grouped Abundance
+
+# ====== B) Prepares Data Matrix for Grouped Abundance =====
 
 # ============== 1. Reads Raw Data ===================
 
@@ -210,8 +212,7 @@ Retina_WP_S3_grouped <- read_excel('Myopia_retina_Whole Proteome results_3 sets.
   
 }
 
-# =========== Mfuzz Plots (Uses Grouped Abundance) =============
-# ============ 1. Selects Columns From Main Grouped Matrix =========
+# ============== 3. Selects Columns From Main Grouped Matrix =========
 grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
 
 # == selects S1 for fuzz
@@ -377,7 +378,7 @@ NL_average <- fuzz_combined_NL %>%
 # fuzz_S3_LI <- standardise(fuzz_S3_LI)
 # fuzz_S3_NL <- standardise(fuzz_S3_NL)
 
-# ============ 2. Creates Timepoints and Binds to Original Dataframe ====
+# ============== 4. Creates Timepoints and Binds to Original Dataframe ====
 
 # function to create timepoints, convert to eset
 create_timepoints <- function(x) {
@@ -411,7 +412,7 @@ S3_NL_eSet <- create_timepoints(fuzz_S3_NL)
 LI_average_eSet <- create_timepoints(LI_average)
 NL_average_eSet <- create_timepoints(NL_average)
 
-# ============ 3. Scales Data ========================
+# ============== 5. Scales Data ========================
 
 # scales data
 S1_LI_eSet <- standardise(S1_LI_eSet)
@@ -431,7 +432,7 @@ NL_average_eSet <- standardise(NL_average_eSet)
 # plots scree plot - determine no of centroids
 # Dmin(LI_average_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
 
-# ============ 4. Estimates Fuzzifier (ie m1) ================
+# ============== 6. Estimates Fuzzifier (ie m1) ================
 
 m1_S1_LI <- mestimate(S1_LI_eSet)
 m1_S1_NL <- mestimate(S1_NL_eSet)
@@ -444,7 +445,7 @@ m1_S3_NL <- mestimate(S3_NL_eSet)
 m1_average_LI <- mestimate(LI_average_eSet)
 m1_average_NL <- mestimate(NL_average_eSet)
 
-# ============ 5. Plots Mfuzz Plots ======================
+# ============== 7. Plots Mfuzz Plots ======================
 
 plot_mfuzz <- function(x,m1) {
   cl <- mfuzz(x,c=12,m=m1)
@@ -513,13 +514,13 @@ plot_mfuzz <- function(x,m1) {
 # plot_mfuzz(NL_average_eSet, m1_average_NL)
 # dev.off()
 
-# ============ 6. Validates and Evaulates Mfuzz Model ==========
+# ============== 8. Validates and Evaulates Mfuzz Model ==========
 
 # creates correlation matrix between cluster centroids
 # (no more than 0.85)
 # correlation_matrix <- data.frame(cor(t(cl[[1]])))
 
-# ============ 7. Extracts Gene Lists From Clusters ==========
+# ============== 9. Extracts Gene Lists From Clusters ==========
 # creates function to extract genes (acore list) in each cluster
 get_genes <- function(x) {
   acore_x <- acore(x,cl,min.acore=0)
@@ -578,7 +579,7 @@ S3_NL_acore_list_combined <- combine_acore(fuzz_S3_NL, S3_NL_acore_list)
 LI_acore_list_combined <- combine_acore(LI_average, LI_acore_list)
 NL_acore_list_combined <- combine_acore(NL_average, NL_acore_list)
 
-# ============ 8. Creates Venn Diagram for Set Overlap ======
+# ============== 10. Creates Venn Diagram for Set Overlap ======
 
 # creates function to prepare venn diagram lists
 plot_venn_diag <- function(Set_1, Set_2, Set_3) {
