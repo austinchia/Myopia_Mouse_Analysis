@@ -18,41 +18,6 @@ library(janitor)
 library(IMIFA)
 library(tidyverse)
 
-
-# in progress
-# ==================================================================
-  grouped_combined_GS_S3 <- fread("grouped_combined_GS_accounted_Mfuzz.csv",sep=',')
-  
-  #creates timepoints
-  timepoint <- data.frame(t(c("NA",0,1,6,9,24,72,168,336)))
-  colnames(timepoint) <- colnames(grouped_combined_GS_S3[,2:10])
-  # binds timepoints to original dataframe
-  test_data <- rbind(timepoint, grouped_combined_GS_S3[,2:10])
-  row.names(test_data)[1]<-"time"
-  tmp <- tempfile()
-  write.table(test_data,file=tmp, sep='\t', quote = F,col.names=NA)
-  #reads temp file as an expression set
-  grouped_combined_GS_S3_eSet <- table2eset(file=tmp)
-  
-  
-  # scales data
-  S2_NL_eSet <- standardise(S2_NL_eSet)
-  # estimates the fuzzifier
-  m1 <- mestimate(S2_NL_eSet)
-  # [1] 1.440961
-  
-  # plots scree plot - determine no of centroids
-  Dmin(S2_NL_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
-
-  # runs c-means fuzzy algorithm 
-  cl <- mfuzz(S2_NL_eSet,c=12,m=m1)
-  # plots mfuzz plot
-  mfuzz.plot2(S2_NL_eSet,
-              cl=cl,
-              mfrow=c(3,3),
-              time.labels = c(0,1,6,9,24,72,168,336),
-              min.mem=0.5,
-  )
 # ===================================================================  
 
 # ============== 1. Reads Raw Data ===================
@@ -284,7 +249,8 @@ fuzz_S3_NL <- grouped_combined_GS %>%
   
   fuzz_combined_NL <- left_join(fuzz_S3_NL_with_GS, fuzz_S2_NL_with_GS, by = 'Gene Symbol') %>%
     left_join(fuzz_S1_NL_with_GS, by = 'Gene Symbol') %>%
-    na.omit()
+    na.omit() %>%
+    column_to_rownames(., var = "Gene Symbol")
   }
 
 # combines all 3 LI sets and calculates average
@@ -387,6 +353,7 @@ NL_average_eSet <- standardise(NL_average_eSet)
 # Dmin(LI_average_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
 
 # ============ 4. Estimates Fuzzifier (ie m1) ================
+
 m1_S1_LI <- mestimate(S1_LI_eSet)
 m1_S1_NL <- mestimate(S1_NL_eSet)
 m1_S2_LI <- mestimate(S2_LI_eSet)
@@ -414,58 +381,58 @@ plot_mfuzz <- function(x,m1) {
   )
 }
 
-# plots mfuzz for Set 1
-png(file = "mfuzz_S1_LI.png",
-    width = 1000,
-    height = 1000,)
-plot_mfuzz(S1_LI_eSet, m1_S1_LI)
-dev.off()
-
-png(file="mfuzz_S1_NL.png",
-    width = 1000,
-    height = 1000,)
-plot_mfuzz(S1_NL_eSet, m1_S1_NL)
-dev.off()
-
-# plots mfuzz for Set 2
-png(file="mfuzz_S2_LI.png",
-    width = 1000,
-    height = 1000,)
-plot_mfuzz(S2_LI_eSet, m1_S2_LI)
-dev.off()
-
-png(file="mfuzz_S2_NL.png",
-    width = 1000,
-    height = 1000,)
-plot_mfuzz(S2_NL_eSet, m1_S2_NL)
-dev.off()
-
-# plots mfuzz for Set 3
-png(file="mfuzz_S3_LI.png",
-    width = 1000,
-    height = 1000,)
-plot_mfuzz(S3_LI_eSet, m1_S3_LI)
-dev.off()
-
-png(file="mfuzz_S3_NL.png",
-    width = 1000,
-    height = 1000,)
-plot_mfuzz(S3_NL_eSet, m1_S3_NL)
-dev.off()
-
-# plots mfuzz for LI (all sets)
-png(file="mfuzz_LI_average.png",
-    width = 1000,
-    height = 1000,)
-plot_mfuzz(LI_average_eSet, m1_average_LI)
-dev.off()
-
-# plots mfuzz for NL (all sets)
-png(file="mfuzz_NL_average.png",
-    width = 1000,
-    height = 1000,)
-plot_mfuzz(NL_average_eSet, m1_average_NL)
-dev.off()
+# # plots mfuzz for Set 1
+# png(file = "mfuzz_S1_LI.png",
+#     width = 1000,
+#     height = 1000,)
+# plot_mfuzz(S1_LI_eSet, m1_S1_LI)
+# dev.off()
+# 
+# png(file="mfuzz_S1_NL.png",
+#     width = 1000,
+#     height = 1000,)
+# plot_mfuzz(S1_NL_eSet, m1_S1_NL)
+# dev.off()
+# 
+# # plots mfuzz for Set 2
+# png(file="mfuzz_S2_LI.png",
+#     width = 1000,
+#     height = 1000,)
+# plot_mfuzz(S2_LI_eSet, m1_S2_LI)
+# dev.off()
+# 
+# png(file="mfuzz_S2_NL.png",
+#     width = 1000,
+#     height = 1000,)
+# plot_mfuzz(S2_NL_eSet, m1_S2_NL)
+# dev.off()
+# 
+# # plots mfuzz for Set 3
+# png(file="mfuzz_S3_LI.png",
+#     width = 1000,
+#     height = 1000,)
+# plot_mfuzz(S3_LI_eSet, m1_S3_LI)
+# dev.off()
+# 
+# png(file="mfuzz_S3_NL.png",
+#     width = 1000,
+#     height = 1000,)
+# plot_mfuzz(S3_NL_eSet, m1_S3_NL)
+# dev.off()
+# 
+# # plots mfuzz for LI (all sets)
+# png(file="mfuzz_LI_average.png",
+#     width = 1000,
+#     height = 1000,)
+# plot_mfuzz(LI_average_eSet, m1_average_LI)
+# dev.off()
+# 
+# # plots mfuzz for NL (all sets)
+# png(file="mfuzz_NL_average.png",
+#     width = 1000,
+#     height = 1000,)
+# plot_mfuzz(NL_average_eSet, m1_average_NL)
+# dev.off()
 
 # ============ 6. Validates and Evaulates Mfuzz Model ==========
 
@@ -478,22 +445,35 @@ dev.off()
 get_genes <- function(x) {
   acore_x <- acore(x,cl,min.acore=0)
   do.call(rbind, lapply(seq_along(acore_x), 
-                        function(i){ data.frame(CLUSTER=i, 
+                        function(i){ data.frame(Cluster=i, 
                                                 acore_x[[i]])}))
 }
 
 # uses get_genes function to extract acore list
 S1_LI_acore_list <- get_genes(S1_LI_eSet)
 S1_NL_acore_list <- get_genes(S1_NL_eSet)
+
 S2_LI_acore_list <- get_genes(S2_LI_eSet)
 S2_NL_acore_list <- get_genes(S2_NL_eSet)
+
 S3_LI_acore_list <- get_genes(S3_LI_eSet)
 S3_NL_acore_list <- get_genes(S3_NL_eSet)
 
-# # #extracts membership values 
-# acore_S3_NL <- acore(S3_NL_eSet,cl,min.acore=0)
-# # # extracts genes for each cluster  
-# acore_list <- do.call(rbind, lapply(seq_along(acore_S3_NL), function(i){ data.frame(CLUSTER=i, acore_S3_NL[[i]])}))
+# extracts acore list for combined sets (LI and NL)
+LI_acore_list <- LI_average_eSet %>%
+  get_genes() %>%
+  na.omit() %>%
+  rename("Gene Symbol" = "NAME")  
+
+# extracts acore list for combined sets (LI and NL)
+NL_acore_list <- NL_average_eSet %>%
+  get_genes() %>%
+  na.omit() %>%
+  rename("Gene Symbol" = "NAME")  
+
+# exports lists of genes in clusters
+fwrite(LI_acore_list, "LI_cluster_genes.csv", sep = ",")
+fwrite(NL_acore_list, "NL_cluster_genes.csv", sep = ",")
 
 # creates function to join acore list to abundance by gene symbol
 combine_acore <- function(abundance_df, acore_list) {
@@ -508,14 +488,16 @@ combine_acore <- function(abundance_df, acore_list) {
 # joins S1
 S1_LI_acore_list_combined <- combine_acore(fuzz_S1_LI, S1_LI_acore_list)
 S1_NL_acore_list_combined <- combine_acore(fuzz_S1_NL, S1_NL_acore_list)
-
 # joins S2
 S2_LI_acore_list_combined <- combine_acore(fuzz_S2_LI, S2_LI_acore_list)
 S2_NL_acore_list_combined <- combine_acore(fuzz_S2_NL, S2_NL_acore_list)
-
 # joins S3
 S3_LI_acore_list_combined <- combine_acore(fuzz_S3_LI, S3_LI_acore_list)
 S3_NL_acore_list_combined <- combine_acore(fuzz_S3_NL, S3_NL_acore_list)
+
+# joins the combined sets (LI and NL)
+LI_acore_list_combined <- combine_acore(LI_average, LI_acore_list)
+NL_acore_list_combined <- combine_acore(NL_average, NL_acore_list)
 
 
 # =========== Volcano Plots - replaces Metaboanalyst =======
@@ -706,9 +688,6 @@ vol_plot <- function(x) {
   dev.off()
   
 }
-
-
-
 
 
 # =========== Metaboanalyst Volcano Plot ================
