@@ -147,9 +147,13 @@ gene_symbol_map <- data.frame(str_split_fixed(gene_symbol$`From	To`, '\t',2))
 colnames(gene_symbol_map) <- c("Master_Protein_Accessions", "Gene Symbol") 
 
 # merges gene symbol column to main df
-ratio_combined_no_na <- left_join(ratio_combined, 
-                                  gene_symbol_map, 
-                                  by = "Master_Protein_Accessions") %>%
+ratio_combined_no_na <- ratio_combined %>%
+  
+  # merges gene symbol column to main df
+  left_join(gene_symbol_map,
+            by = "Master_Protein_Accessions") %>%
+  
+  # relocates columns and removes NAs
   relocate(c(`Modifications`,
              `Master_Protein_Accessions`,
              `Gene Symbol`),
@@ -162,12 +166,14 @@ ratio_combined_no_na <- left_join(ratio_combined,
   mutate(`Gene Symbol` = ifelse(`GS_count` == 1, 
                                 `Gene Symbol`, 
                                 paste0(`Gene Symbol`, "-", `GS_count`))) %>%
+  
   # adds number to the end of duplicate phosphopeptide (ie Sptbn1-2)
   group_by(`Annotated_Sequence`) %>%
   mutate(`seq_count` = 1:n()) %>%
   mutate(`Annotated_Sequence` = ifelse(`seq_count` == 1, 
                                 `Annotated_Sequence`, 
                                 paste0(`Annotated_Sequence`, "-", `seq_count`))) %>%
+  
   # removes unused columns
   select(-c(`GS_count`,
             `Modifications.x`,
@@ -176,5 +182,7 @@ ratio_combined_no_na <- left_join(ratio_combined,
             `Master_Protein_Accessions.y`
             ))
 
-# exports combined abundance ratio matrix to csv
+# exports combined grouped abundance matrix to csv
 fwrite(ratio_combined_no_na, "phospho_abund_grouped_combined.csv", sep = ",")
+
+
