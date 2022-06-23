@@ -518,7 +518,8 @@ plot_mfuzz <- function(x,m1) {
 
 # ============== 9. Extracts Gene Lists From Clusters ==========
 # creates function to extract genes (acore list) in each cluster
-get_genes <- function(x) {
+get_genes <- function(x, m1) {
+  cl <- mfuzz(x, c = 12,m = m1)
   acore_x <- acore(x,cl,min.acore=0)
   do.call(rbind, lapply(seq_along(acore_x), 
                         function(i){ data.frame(Cluster=i, 
@@ -526,24 +527,24 @@ get_genes <- function(x) {
 }
 
 # uses get_genes function to extract acore list
-S1_LI_acore_list <- get_genes(S1_LI_eSet)
-S1_NL_acore_list <- get_genes(S1_NL_eSet)
+S1_LI_acore_list <- get_genes(S1_LI_eSet, m1_S1_LI)
+S1_NL_acore_list <- get_genes(S1_NL_eSet, m1_S1_NL)
 
-S2_LI_acore_list <- get_genes(S2_LI_eSet)
-S2_NL_acore_list <- get_genes(S2_NL_eSet)
+S2_LI_acore_list <- get_genes(S2_LI_eSet, m1_S2_LI)
+S2_NL_acore_list <- get_genes(S2_NL_eSet, m1_S2_NL)
 
-S3_LI_acore_list <- get_genes(S3_LI_eSet)
-S3_NL_acore_list <- get_genes(S3_NL_eSet)
+S3_LI_acore_list <- get_genes(S3_LI_eSet, m1_S3_LI)
+S3_NL_acore_list <- get_genes(S3_NL_eSet, m1_S3_NL)
 
-# extracts acore list for combined sets (LI and NL)
+# extracts acore list for combined sets (LI)
 LI_acore_list <- LI_average_eSet %>%
-  get_genes() %>%
+  get_genes(., m1_average_LI) %>%
   na.omit() %>%
   rename("Gene Symbol" = "NAME")  
 
-# extracts acore list for combined sets (LI and NL)
+# extracts acore list for combined sets (NL)
 NL_acore_list <- NL_average_eSet %>%
-  get_genes() %>%
+  get_genes(., m1_average_NL) %>%
   na.omit() %>%
   rename("Gene Symbol" = "NAME")  
 
