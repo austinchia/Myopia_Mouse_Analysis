@@ -566,9 +566,9 @@ Retina_WP_S3_grouped$Master_Protein_Accessions <- sapply(strsplit(Retina_WP_S3_g
 plot_venn_diag <- function(Set_1, Set_2, Set_3) {
   # Creates list of proteins in each set
   protein_list <- list(
-    Set_1 = Set_1$Master_Protein_Accessions, 
-    Set_2 = Set_2$Master_Protein_Accessions, 
-    Set_3 = Set_3$Master_Protein_Accessions
+    Set_1 = Set_1$Annotated_Sequence, 
+    Set_2 = Set_2$Annotated_Sequence, 
+    Set_3 = Set_3$Annotated_Sequence
   )
   # Sets names to protein list
   names(protein_list) <- c("Set 1","Set 2","Set 3")
@@ -577,7 +577,7 @@ plot_venn_diag <- function(Set_1, Set_2, Set_3) {
     protein_list, 
     fill_color = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF"),
     stroke_size = 0.5, 
-    text_size = 2,
+    text_size = 3,
     set_name_size = 3
   )
 }
@@ -589,7 +589,7 @@ plot_venn_diag(Retina_WP_S1_grouped,
 
 # exports venn diagram
 ggsave(
-  "Phospho_Protein_Venn.png",
+  "Phospho_Protein_Venn_Peptide.png",
   plot = last_plot(),
   bg = 'white',
   width = 5, 
