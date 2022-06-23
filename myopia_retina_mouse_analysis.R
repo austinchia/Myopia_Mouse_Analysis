@@ -2,6 +2,14 @@
 # This script is used for Whole Protein
 # This script reads in raw data > preprocesses data > to form a data matrix
 # Data matrix is used for further stats analysis
+
+# ============== Clears Memory ======
+# clears all objects includes hidden objects
+rm(list = ls(all.names = TRUE)) 
+
+# frees up memory and reports the memory usage.
+gc() 
+
 # ============== Loads Packages =======
 library(readxl)
 library(MetaboAnalystR)
