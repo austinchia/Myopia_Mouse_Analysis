@@ -422,9 +422,6 @@ LI_average_eSet <- standardise(LI_average_eSet)
 # normalizes LI average
 NL_average_eSet <- standardise(NL_average_eSet)
 
-# plots scree plot - determine no of centroids
-# Dmin(LI_average_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
-
 # ============== 6. Estimates Fuzzifier (ie m1) ================
 
 m1_S1_LI <- mestimate(S1_LI_eSet)
@@ -437,6 +434,9 @@ m1_S3_NL <- mestimate(S3_NL_eSet)
 # estimates fuzzifier for LI and NL (all sets)
 m1_average_LI <- mestimate(LI_average_eSet)
 m1_average_NL <- mestimate(NL_average_eSet)
+
+# plots scree plot - determine no of centroids
+# Dmin(LI_average_eSet, m=m1, crange=seq(5,20,1), repeats=3, visu=TRUE)
 
 # ============== 7. Plots Mfuzz Plots ======================
 
@@ -454,58 +454,61 @@ plot_mfuzz <- function(x,m1) {
   )
 }
 
-# # plots mfuzz for Set 1
-# png(file = "mfuzz_S1_LI.png",
-#     width = 1000,
-#     height = 1000,)
-# plot_mfuzz(S1_LI_eSet, m1_S1_LI)
-# dev.off()
-# 
-# png(file="mfuzz_S1_NL.png",
-#     width = 1000,
-#     height = 1000,)
-# plot_mfuzz(S1_NL_eSet, m1_S1_NL)
-# dev.off()
-# 
-# # plots mfuzz for Set 2
-# png(file="mfuzz_S2_LI.png",
-#     width = 1000,
-#     height = 1000,)
-# plot_mfuzz(S2_LI_eSet, m1_S2_LI)
-# dev.off()
-# 
-# png(file="mfuzz_S2_NL.png",
-#     width = 1000,
-#     height = 1000,)
-# plot_mfuzz(S2_NL_eSet, m1_S2_NL)
-# dev.off()
-# 
-# # plots mfuzz for Set 3
-# png(file="mfuzz_S3_LI.png",
-#     width = 1000,
-#     height = 1000,)
-# plot_mfuzz(S3_LI_eSet, m1_S3_LI)
-# dev.off()
-# 
-# png(file="mfuzz_S3_NL.png",
-#     width = 1000,
-#     height = 1000,)
-# plot_mfuzz(S3_NL_eSet, m1_S3_NL)
-# dev.off()
-# 
-# # plots mfuzz for LI (all sets)
-# png(file="mfuzz_LI_average.png",
-#     width = 1000,
-#     height = 1000,)
-# plot_mfuzz(LI_average_eSet, m1_average_LI)
-# dev.off()
-# 
-# # plots mfuzz for NL (all sets)
-# png(file="mfuzz_NL_average.png",
-#     width = 1000,
-#     height = 1000,)
-# plot_mfuzz(NL_average_eSet, m1_average_NL)
-# dev.off()
+# plots mfuzz plots
+{
+  # plots mfuzz for Set 1
+  png(file = "mfuzz_S1_LI.png",
+      width = 1000,
+      height = 1000,)
+  plot_mfuzz(S1_LI_eSet, m1_S1_LI)
+  dev.off()
+  
+  png(file="mfuzz_S1_NL.png",
+      width = 1000,
+      height = 1000,)
+  plot_mfuzz(S1_NL_eSet, m1_S1_NL)
+  dev.off()
+  
+  # plots mfuzz for Set 2
+  png(file="mfuzz_S2_LI.png",
+      width = 1000,
+      height = 1000,)
+  plot_mfuzz(S2_LI_eSet, m1_S2_LI)
+  dev.off()
+  
+  png(file="mfuzz_S2_NL.png",
+      width = 1000,
+      height = 1000,)
+  plot_mfuzz(S2_NL_eSet, m1_S2_NL)
+  dev.off()
+  
+  # plots mfuzz for Set 3
+  png(file="mfuzz_S3_LI.png",
+      width = 1000,
+      height = 1000,)
+  plot_mfuzz(S3_LI_eSet, m1_S3_LI)
+  dev.off()
+  
+  png(file="mfuzz_S3_NL.png",
+      width = 1000,
+      height = 1000,)
+  plot_mfuzz(S3_NL_eSet, m1_S3_NL)
+  dev.off()
+  
+  # plots mfuzz for LI (all sets)
+  png(file="mfuzz_LI_average.png",
+      width = 1000,
+      height = 1000,)
+  plot_mfuzz(LI_average_eSet, m1_average_LI)
+  dev.off()
+  
+  # plots mfuzz for NL (all sets)
+  png(file="mfuzz_NL_average.png",
+      width = 1000,
+      height = 1000,)
+  plot_mfuzz(NL_average_eSet, m1_average_NL)
+  dev.off()
+}
 
 # ============== 8. Validates and Evaulates Mfuzz Model ==========
 
