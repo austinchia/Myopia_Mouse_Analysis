@@ -1,6 +1,14 @@
 # About
 # This script reads in raw data > preprocesses data > to form a data matrix
 # Data matrix is used for further stats analysis
+
+# ============== Clears Memory ======
+# clears all objects includes hidden objects
+rm(list = ls(all.names = TRUE)) 
+
+# frees up memory and reports the memory usage.
+gc() 
+
 # ============== Loads Packages =======
 library(readxl)
 library(MetaboAnalystR)
@@ -20,7 +28,8 @@ library(tidyverse)
 library(ggVennDiagram)
 library(ggvenn)
 
-# ====== A) Prepares Data Matrix for Grouped Abundance =====
+# ====== A) Prepares Data Matrix for Grouped Abundance
+# ============== 1. Read & Selects from Excel File ======
 
 # reads S1 raw data
 Retina_WP_S1_grouped <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet = 'Phospho_Ret_S1', na = c("", "NA")) %>%
@@ -471,15 +480,16 @@ plot_mfuzz <- function(x,m1) {
   # dev.off()
 }
 
-# ============== 10. Validates and Evaluates Mfuzz Model ==========
+# ============= 10. Validates and Evaluates Mfuzz Model ==========
 
 # creates correlation matrix between cluster centroids
 # (no more than 0.85)
 # correlation_matrix <- data.frame(cor(t(cl[[1]])))
 
-# ============== 11. Extracts Gene Lists From Clusters ==========
+# ============= 11. Extracts Gene Lists From Clusters ==========
 # creates function to extract genes (acore list) in each cluster
-get_genes <- function(x) {
+get_genes <- function(x, m1) {
+  cl <- mfuzz(x, c = 12,m = m1)
   acore_x <- acore(x,cl,min.acore=0)
   do.call(rbind, lapply(seq_along(acore_x), 
                         function(i){ data.frame(Cluster=i, 
@@ -487,30 +497,30 @@ get_genes <- function(x) {
 }
 
 # uses get_genes function to extract acore list
-S1_LI_acore_list <- get_genes(S1_LI_eSet)
-S1_NL_acore_list <- get_genes(S1_NL_eSet)
+S1_LI_acore_list <- get_genes(S1_LI_eSet, m1_S1_LI)
+S1_NL_acore_list <- get_genes(S1_NL_eSet, m1_S1_NL)
 
-S2_LI_acore_list <- get_genes(S2_LI_eSet)
-S2_NL_acore_list <- get_genes(S2_NL_eSet)
+S2_LI_acore_list <- get_genes(S2_LI_eSet, m1_S2_LI)
+S2_NL_acore_list <- get_genes(S2_NL_eSet, m1_S2_NL)
 
-S3_LI_acore_list <- get_genes(S3_LI_eSet)
-S3_NL_acore_list <- get_genes(S3_NL_eSet)
+S3_LI_acore_list <- get_genes(S3_LI_eSet, m1_S3_LI)
+S3_NL_acore_list <- get_genes(S3_NL_eSet, m1_S3_NL)
 
-# extracts acore list for combined sets (LI and NL)
+# extracts acore list for combined sets (LI)
 LI_acore_list <- LI_average_eSet %>%
-  get_genes() %>%
+  get_genes(., m1_average_LI) %>%
   na.omit() %>%
   rename("Gene Symbol" = "NAME")  
 
-# extracts acore list for combined sets (LI and NL)
+# extracts acore list for combined sets (NL)
 NL_acore_list <- NL_average_eSet %>%
-  get_genes() %>%
+  get_genes(., m1_average_NL) %>%
   na.omit() %>%
   rename("Gene Symbol" = "NAME")  
 
 # exports lists of genes in clusters
-fwrite(LI_acore_list, "LI_cluster_genes.csv", sep = ",")
-fwrite(NL_acore_list, "NL_cluster_genes.csv", sep = ",")
+fwrite(LI_acore_list, "LI_cluster_genes_phospho.csv", sep = ",")
+fwrite(NL_acore_list, "NL_cluster_genes_phospho.csv", sep = ",")
 
 # creates function to join acore list to abundance by gene symbol
 combine_acore <- function(abundance_df, acore_list) {
@@ -532,17 +542,25 @@ S2_NL_acore_list_combined <- combine_acore(fuzz_S2_NL, S2_NL_acore_list)
 S3_LI_acore_list_combined <- combine_acore(fuzz_S3_LI, S3_LI_acore_list)
 S3_NL_acore_list_combined <- combine_acore(fuzz_S3_NL, S3_NL_acore_list)
 
-# joins the combined sets (LI and NL)
-LI_acore_list_combined <- combine_acore(LI_average, LI_acore_list)
-NL_acore_list_combined <- combine_acore(NL_average, NL_acore_list)
+# creates function to join by gene symbol (only for combined average groups)
+combine_acore_average <- function(abundance_df, acore_list) {
+  acore_combined <- left_join(rownames_to_column(abundance_df), 
+                              acore_list, 
+                              by=c("rowname" = "Gene Symbol"))
+  names(acore_combined)[names(acore_combined) == 'rowname'] <- 'Gene Symbol'
+  return(acore_combined)
+}
 
-# ============== 12. Creates Venn Diagram for Set Overlap ======
+# joins the combined sets (LI and NL)
+LI_acore_list_combined <- combine_acore_average(LI_average, LI_acore_list)
+NL_acore_list_combined <- combine_acore_average(NL_average, NL_acore_list)
+
+# ============= 12. Creates Venn Diagram for Set Overlap ======
 
 # splits accession by ";" delimiter (ie "Q9JHU4-1; Q9JHU4" --> "Q9JHU4-1")
 Retina_WP_S1_grouped$Master_Protein_Accessions <- sapply(strsplit(Retina_WP_S1_grouped$Master_Protein_Accessions,";"), `[`, 1)
 Retina_WP_S2_grouped$Master_Protein_Accessions <- sapply(strsplit(Retina_WP_S2_grouped$Master_Protein_Accessions,";"), `[`, 1)
 Retina_WP_S3_grouped$Master_Protein_Accessions <- sapply(strsplit(Retina_WP_S3_grouped$Master_Protein_Accessions,";"), `[`, 1)
-
 
 # creates function to prepare venn diagram lists
 plot_venn_diag <- function(Set_1, Set_2, Set_3) {
