@@ -542,7 +542,7 @@ S2_NL_acore_list_combined <- combine_acore(fuzz_S2_NL, S2_NL_acore_list)
 S3_LI_acore_list_combined <- combine_acore(fuzz_S3_LI, S3_LI_acore_list)
 S3_NL_acore_list_combined <- combine_acore(fuzz_S3_NL, S3_NL_acore_list)
 
-# creates function to join by gene symbol (only for combined average groups)
+# creates 2nd function to join by gene symbol (for combined average groups)
 combine_acore_average <- function(abundance_df, acore_list) {
   acore_combined <- left_join(rownames_to_column(abundance_df), 
                               acore_list, 
