@@ -557,13 +557,43 @@ NL_acore_list_combined <- combine_acore_average(NL_average, NL_acore_list)
 
 # ============= 12. Creates Venn Diagram for Set Overlap ======
 
+# == selects raw data for venn (identified) ==
+{
+  # reads S1 raw data (identified)
+  Retina_WP_S1_identified <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet = 'Phospho_Ret_S1', na = c("", "NA")) %>%
+    select(c(`Annotated Sequence`,
+             `Modifications`,
+             `Master Protein Accessions`,
+             `Abundances (Grouped)`)) %>%
+    rename("Annotated_Sequence" = "Annotated Sequence") %>%
+    rename("Master_Protein_Accessions" = "Master Protein Accessions")
+  
+  # reads S2 raw data (identified)
+  Retina_WP_S2_identified <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet = 'Phospho_Ret_S2', na = c("", "NA")) %>%
+    select(c(`Annotated Sequence`,
+             `Modifications`,
+             `Master Protein Accessions`,
+             `Abundances (Grouped)`)) %>%
+    rename("Annotated_Sequence" = "Annotated Sequence") %>%
+    rename("Master_Protein_Accessions" = "Master Protein Accessions")
+  
+  # reads S3 raw data (identified)
+  Retina_WP_S3_identified <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet = 'Phospho_Ret_S3', na = c("", "NA")) %>%
+    select(c(`Annotated Sequence`,
+             `Modifications`,
+             `Master Protein Accessions`,
+             `Abundances (Grouped)`)) %>%
+    rename("Annotated_Sequence" = "Annotated Sequence") %>%
+    rename("Master_Protein_Accessions" = "Master Protein Accessions")
+}
+
 # splits accession by ";" delimiter (ie "Q9JHU4-1; Q9JHU4" --> "Q9JHU4-1")
 Retina_WP_S1_grouped$Master_Protein_Accessions <- sapply(strsplit(Retina_WP_S1_grouped$Master_Protein_Accessions,";"), `[`, 1)
 Retina_WP_S2_grouped$Master_Protein_Accessions <- sapply(strsplit(Retina_WP_S2_grouped$Master_Protein_Accessions,";"), `[`, 1)
 Retina_WP_S3_grouped$Master_Protein_Accessions <- sapply(strsplit(Retina_WP_S3_grouped$Master_Protein_Accessions,";"), `[`, 1)
 
-# creates function to prepare venn diagram lists
-plot_venn_diag <- function(Set_1, Set_2, Set_3) {
+# creates function to plot venn diagram (peptides) (using Annotated Sequence)
+plot_venn_peptide <- function(Set_1, Set_2, Set_3) {
   # Creates list of proteins in each set
   protein_list <- list(
     Set_1 = Set_1$Annotated_Sequence, 
@@ -582,16 +612,94 @@ plot_venn_diag <- function(Set_1, Set_2, Set_3) {
   )
 }
 
-# plots venn diagram
-plot_venn_diag(Retina_WP_S1_grouped, 
-               Retina_WP_S2_grouped, 
-               Retina_WP_S3_grouped)
+# creates function to plot venn diagram (proteins) (using Accession No)
+plot_venn_protein <- function(Set_1, Set_2, Set_3) {
+  # Creates list of proteins in each set
+  protein_list <- list(
+    Set_1 = Set_1$Master_Protein_Accessions, 
+    Set_2 = Set_2$Master_Protein_Accessions, 
+    Set_3 = Set_3$Master_Protein_Accessions
+  )
+  # Sets names to protein list
+  names(protein_list) <- c("Set 1","Set 2","Set 3")
+  # plots venn diagram
+  ggvenn(
+    protein_list, 
+    fill_color = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF"),
+    stroke_size = 0.5, 
+    text_size = 3,
+    set_name_size = 3
+  )
+}
 
-# exports venn diagram
-ggsave(
-  "Phospho_Protein_Venn_Peptide.png",
-  plot = last_plot(),
-  bg = 'white',
-  width = 5, 
-  height = 5
-)
+# plots venn diagram (quantifiable, peptides)
+{
+  # plots venn
+  plot_venn_peptide(Retina_WP_S1_grouped,
+                    Retina_WP_S2_grouped, 
+                    Retina_WP_S3_grouped)
+  
+  # exports venn diagrams (quantifiable, peptides)
+  ggsave(
+    "Phospho_Protein_Venn_Peptide_Quantifiable.png",
+    plot = last_plot(),
+    bg = 'white',
+    width = 5, 
+    height = 5
+  )
+  
+}
+
+# plots venn diagram (identified, peptide)
+{
+  # plots venn
+  plot_venn_peptide(Retina_WP_S1_identified, 
+                    Retina_WP_S2_identified, 
+                    Retina_WP_S3_identified
+  )
+  # exports venn diagrams (identified, peptide)
+  ggsave(
+    "Phospho_Protein_Venn_Peptide_Identified.png",
+    plot = last_plot(),
+    bg = 'white',
+    width = 5, 
+    height = 5
+  )
+}
+
+# plots venn diagram (quantifiable, protein)
+{
+  # plots venn
+  plot_venn_protein(Retina_WP_S1_grouped, 
+                    Retina_WP_S2_grouped, 
+                    Retina_WP_S3_grouped
+  )
+  
+  # exports venn diagrams (quantifiable, protein)
+  ggsave(
+    "Phospho_Protein_Venn_Protein_Quantifiable.png",
+    plot = last_plot(),
+    bg = 'white',
+    width = 5, 
+    height = 5
+  )
+}
+
+# plots venn diagram (identified, protein)
+{
+  # plots venn
+  plot_venn_protein(Retina_WP_S1_identified, 
+                    Retina_WP_S2_identified, 
+                    Retina_WP_S3_identified
+                    )
+  
+  # exports venn diagrams (identified proteins, whole protein)
+  ggsave(
+    "Phospho_Protein_Venn_Protein_Identified.png",
+    plot = last_plot(),
+    bg = 'white',
+    width = 5, 
+    height = 5
+  )
+  
+}
