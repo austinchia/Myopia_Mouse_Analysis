@@ -155,15 +155,18 @@ fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
 
 # reads S1 raw data
 Retina_WP_S1_grouped <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S1', na = c("", "NA")) %>%
-  select(c(`Accession`,`Abundances (Grouped)`))
+  select(c(`Accession`,`Abundances (Grouped)`)) %>%
+  na.omit()
 
 # reads S2 raw data
 Retina_WP_S2_grouped <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S2', na = c("", "NA")) %>%
-  select(c(`Accession`,`Abundances (Grouped)`))
+  select(c(`Accession`,`Abundances (Grouped)`)) %>%
+  na.omit()
 
 # reads S3 raw data
 Retina_WP_S3_grouped <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S3', na = c("", "NA")) %>%
-  select(c(`Accession`,`Abundances (Grouped)`))
+  select(c(`Accession`,`Abundances (Grouped)`)) %>%
+  na.omit()
 
 # ============== 2. Manipulates Data  ===============
 # S1 Data manipulation
@@ -565,6 +568,15 @@ combine_acore <- function(abundance_df, acore_list) {
   acore_combined <- left_join(rownames_to_column(abundance_df), 
             acore_list, 
             by=c("rowname" = "NAME"))
+  names(acore_combined)[names(acore_combined) == 'rowname'] <- 'NAME'
+  return(acore_combined)
+}
+
+# creates function to join list with abundance (only for average combined sets)
+combine_acore_GS <- function(abundance_df, acore_list) {
+  acore_combined <- left_join(rownames_to_column(abundance_df), 
+                              acore_list, 
+                              by=c("rowname" = "Gene Symbol"))
   names(acore_combined)[names(acore_combined) == 'rowname'] <- 'Gene Symbol'
   return(acore_combined)
 }
@@ -581,13 +593,28 @@ S3_LI_acore_list_combined <- combine_acore(fuzz_S3_LI, S3_LI_acore_list)
 S3_NL_acore_list_combined <- combine_acore(fuzz_S3_NL, S3_NL_acore_list)
 
 # joins the combined sets (LI and NL)
-LI_acore_list_combined <- combine_acore(LI_average, LI_acore_list)
-NL_acore_list_combined <- combine_acore(NL_average, NL_acore_list)
+LI_acore_list_combined <- combine_acore_GS(LI_average, LI_acore_list)
+NL_acore_list_combined <- combine_acore_GS(NL_average, NL_acore_list)
 
 # ============== 10. Creates Venn Diagram for Set Overlap ======
 
-# creates function to prepare venn diagram lists
-plot_venn_diag <- function(Set_1, Set_2, Set_3) {
+# == selects raw data for venn (identified) ==
+{
+  # reads S1 raw data
+  Retina_WP_S1_identified <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S1', na = c("", "NA")) %>%
+    select(c(`Accession`,`Abundances (Grouped)`))
+  
+  # reads S2 raw data
+  Retina_WP_S2_identified <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S2', na = c("", "NA")) %>%
+    select(c(`Accession`,`Abundances (Grouped)`))
+  
+  # reads S3 raw data
+  Retina_WP_S3_identified <- read_excel('Myopia_retina_Whole Proteome results_3 sets.xlsx', sheet = 'Retina_WP_S3', na = c("", "NA")) %>%
+    select(c(`Accession`,`Abundances (Grouped)`))
+}
+
+# creates function to plot venn diagram (proteins) (using Accession No)
+plot_venn_protein <- function(Set_1, Set_2, Set_3) {
   # Creates list of proteins in each set
   protein_list <- list(
     Set_1 = Set_1$Accession, 
@@ -601,24 +628,47 @@ plot_venn_diag <- function(Set_1, Set_2, Set_3) {
     protein_list, 
     fill_color = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF"),
     stroke_size = 0.5, 
-    text_size = 2,
+    text_size = 3,
     set_name_size = 3
   )
 }
 
-# plots venn diagram
-plot_venn_diag(Retina_WP_S1_grouped, 
-               Retina_WP_S2_grouped, 
-               Retina_WP_S3_grouped)
-
-# exports venn diagram
-ggsave(
-  "Whole_Protein_Venn.png",
-  plot = last_plot(),
-  bg = 'white',
-  width = 5, 
-  height = 5
+# plots venn diagram (quantifiable, protein)
+{
+  # plots venn
+  plot_venn_protein(Retina_WP_S1_grouped, 
+                    Retina_WP_S2_grouped, 
+                    Retina_WP_S3_grouped
   )
+  
+  # exports venn diagrams (quantifiable, protein)
+  ggsave(
+    "Whole_Protein_Venn_Protein_Quantifiable.png",
+    plot = last_plot(),
+    bg = 'white',
+    width = 5, 
+    height = 5
+  )
+}
+
+# plots venn diagram (identified, protein)
+{
+  # plots venn
+  plot_venn_protein(Retina_WP_S1_identified, 
+                    Retina_WP_S2_identified, 
+                    Retina_WP_S3_identified
+  )
+  
+  # exports venn diagrams (identified proteins, whole protein)
+  ggsave(
+    "Whole_Protein_Venn_Protein_Identified.png",
+    plot = last_plot(),
+    bg = 'white',
+    width = 5, 
+    height = 5
+  )
+  
+}
 
 # =========== Volcano Plots - replaces Metaboanalyst =======
 
