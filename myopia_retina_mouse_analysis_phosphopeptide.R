@@ -703,3 +703,9 @@ plot_venn_protein <- function(Set_1, Set_2, Set_3) {
   )
   
 }
+
+# selects log2 data and splits columns
+# combines acore list with log2 data
+# filters out specific clusters
+# exports lists for each cluster
+
