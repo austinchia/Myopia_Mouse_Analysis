@@ -368,20 +368,6 @@ NL_average <- fuzz_combined_NL %>%
   mutate('NL_D14_mean' = rowMeans(subset(., select = c(`S1_NL_D14`,`S2_NL_D14`,`S3_NL_D14`)))) %>%
   select(`NL_0hr_mean`, `NL_1hr_mean`, `NL_6hr_mean`, `NL_9hr_mean`, `NL_D1_mean`, `NL_D3_mean`, `NL_D7_mean`, `NL_D14_mean`)
 
-
-
-# # applies function to scale data to S1
-# fuzz_S1_LI <- standardise(fuzz_S1_LI)
-# fuzz_S1_NL <- standardise(fuzz_S1_NL)
-# 
-# # applies function to scale data to S2
-# fuzz_S2_LI <- standardise(fuzz_S2_LI)
-# fuzz_S2_NL <- standardise(fuzz_S2_NL)
-# 
-# # applies function to scale data to S3
-# fuzz_S3_LI <- standardise(fuzz_S3_LI)
-# fuzz_S3_NL <- standardise(fuzz_S3_NL)
-
 # ============== 4. Creates Timepoints and Binds to Original Dataframe ====
 
 # function to create timepoints, convert to eset
@@ -669,6 +655,63 @@ plot_venn_protein <- function(Set_1, Set_2, Set_3) {
   )
   
 }
+
+
+# ============ work in progress =====
+
+# cleans main matrix before combining
+grouped_combined_GS_export <- grouped_combined_GS %>%
+  select(`Gene Symbol`, `Accession`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D3`,	`S1_LI_D7`,	`S1_LI_D14`) %>%
+  # replaces 0 with NA
+  na_if(0) %>%
+  # removes NAs
+  na.omit()
+
+# merges acore list with main matrix
+LI_acore_list_data <- LI_acore_list_combined %>%
+  # merges list with LI data
+  left_join(.,
+            grouped_combined_GS_export,
+            by= 'Gene Symbol') %>%
+  
+  # merges with NL data
+  left_join(.,
+            NL_acore_list_combined,
+            by= 'Gene Symbol') %>%
+  
+  # calculates means for LI & NL + log2FC
+  mutate(., LI_mean = rowMeans(select(.,
+                                      LI_0hr_mean:LI_D14_mean), na.rm = TRUE)) %>%
+  mutate(., NL_mean = rowMeans(select(.,
+                                      NL_0hr_mean:NL_D14_mean), na.rm = TRUE)) %>%
+  mutate(., log2FC = log2(LI_mean/NL_mean)) %>%
+  
+  # selects useful columns
+  select(`Accession`, `Cluster.x`, `log2FC`)
+
+# creates function to filter out by cluster
+filter_cluster <- function(dataframe, cluster_no) {
+  dataframe %>%
+    filter(`Cluster.x` == cluster_no) %>%
+    select(-c(`Cluster.x`))
+} 
+
+# filters acore list by cluster
+{
+  LI_acore_list_cl1 <- filter_cluster(LI_acore_list_data, 1)
+  LI_acore_list_cl4 <- filter_cluster(LI_acore_list_data, 4)
+  LI_acore_list_cl5 <- filter_cluster(LI_acore_list_data, 5)
+  LI_acore_list_cl7 <- filter_cluster(LI_acore_list_data, 7)
+  LI_acore_list_cl8 <- filter_cluster(LI_acore_list_data, 8)
+  LI_acore_list_cl10 <- filter_cluster(LI_acore_list_data, 10)
+  LI_acore_list_cl11 <- filter_cluster(LI_acore_list_data, 11)
+  LI_acore_list_cl12 <- filter_cluster(LI_acore_list_data, 12)
+  
+}
+
+# exports acore list
+
+
 
 # =========== Volcano Plots - replaces Metaboanalyst =======
 
