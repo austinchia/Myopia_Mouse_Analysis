@@ -555,7 +555,136 @@ combine_acore_average <- function(abundance_df, acore_list) {
 LI_acore_list_combined <- combine_acore_average(LI_average, LI_acore_list)
 NL_acore_list_combined <- combine_acore_average(NL_average, NL_acore_list)
 
-# ============= 12. Creates Venn Diagram for Set Overlap ======
+# ============= 12. Exports Protein Lists from Mfuzz Clusters (LI) ====
+# cleans main matrix before combining
+grouped_combined_GS_export <- grouped_combined_GS %>%
+  # selects required columns
+  select(`Gene Symbol`, `Master_Protein_Accessions.x`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D3`,	`S1_LI_D7`,	`S1_LI_D14`) %>%
+  
+  # replaces 0 with NA
+  na_if(0) %>%
+  
+  # removes NAs
+  na.omit()
+
+# merges acore list with main matrix
+LI_acore_list_data <- LI_acore_list_combined %>%
+  # merges list with LI data
+  left_join(.,
+            grouped_combined_GS_export,
+            by= 'Gene Symbol') %>%
+  
+  # merges with NL data
+  left_join(.,
+            NL_acore_list_combined,
+            by= 'Gene Symbol') %>%
+  
+  # calculates means for LI & NL + log2FC
+  mutate(., LI_mean = rowMeans(select(.,
+                                      LI_0hr_mean:LI_D14_mean), na.rm = TRUE)) %>%
+  mutate(., NL_mean = rowMeans(select(.,
+                                      NL_0hr_mean:NL_D14_mean), na.rm = TRUE)) %>%
+  mutate(., log2FC = log2(LI_mean/NL_mean)) %>%
+  
+  # renames column
+  rename("Accession" = "Master_Protein_Accessions.x") %>%
+  rename("Cluster" = "Cluster.x") %>%
+  
+  # selects useful columns
+  select(`Accession`, `Cluster`, `log2FC`)
+
+# creates function to filter out by cluster
+filter_cluster <- function(dataframe, cluster_no) {
+  dataframe %>%
+    filter(`Cluster` == cluster_no) %>%
+    select(-c(`Cluster`))
+} 
+
+# filters acore list by cluster (1, 2, 4, 5, 7, 9)
+{
+  LI_acore_list_cl_1 <- filter_cluster(LI_acore_list_data, 1)
+  LI_acore_list_cl_2 <- filter_cluster(LI_acore_list_data, 2)
+  LI_acore_list_cl_4 <- filter_cluster(LI_acore_list_data, 4)
+  LI_acore_list_cl_5 <- filter_cluster(LI_acore_list_data, 5)
+  LI_acore_list_cl_7 <- filter_cluster(LI_acore_list_data, 7)
+  LI_acore_list_cl_9 <- filter_cluster(LI_acore_list_data, 9)
+}
+
+# exports acore list for clusters (1, 2, 4, 5, 7, 9)
+{
+  fwrite(LI_acore_list_cl_1, "Output/Phospho_Protein_LI_Cluster_1.csv", sep = ",")
+  fwrite(LI_acore_list_cl_2, "Output/Phospho_Protein_LI_Cluster_2.csv", sep = ",")
+  fwrite(LI_acore_list_cl_4, "Output/Phospho_Protein_LI_Cluster_4.csv", sep = ",")
+  fwrite(LI_acore_list_cl_5, "Output/Phospho_Protein_LI_Cluster_5.csv", sep = ",")
+  fwrite(LI_acore_list_cl_7, "Output/Phospho_Protein_LI_Cluster_7.csv", sep = ",")
+  fwrite(LI_acore_list_cl_9, "Output/Phospho_Protein_LI_Cluster_9.csv", sep = ",")
+}
+
+
+
+# ============= 13. Exports Protein Lists from Mfuzz Clusters (NL) ====
+# cleans main matrix before combining
+grouped_combined_GS_export <- grouped_combined_GS %>%
+  select(`Gene Symbol`, `Master_Protein_Accessions.x`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D3`,	`S1_LI_D7`,	`S1_LI_D14`) %>%
+  # replaces 0 with NA
+  na_if(0) %>%
+  # removes NAs
+  na.omit()
+
+# merges acore list with main matrix
+LI_acore_list_data <- LI_acore_list_combined %>%
+  # merges list with LI data
+  left_join(.,
+            grouped_combined_GS_export,
+            by= 'Gene Symbol') %>%
+  
+  # merges with NL data
+  left_join(.,
+            NL_acore_list_combined,
+            by= 'Gene Symbol') %>%
+  
+  # calculates means for LI & NL + log2FC
+  mutate(., LI_mean = rowMeans(select(.,
+                                      LI_0hr_mean:LI_D14_mean), na.rm = TRUE)) %>%
+  mutate(., NL_mean = rowMeans(select(.,
+                                      NL_0hr_mean:NL_D14_mean), na.rm = TRUE)) %>%
+  mutate(., log2FC = log2(LI_mean/NL_mean)) %>%
+  
+  # selects useful columns
+  select(`Master_Protein_Accessions.x`, `Cluster.x`, `log2FC`)
+
+# creates function to filter out by cluster
+filter_cluster <- function(dataframe, cluster_no) {
+  dataframe %>%
+    filter(`Cluster.x` == cluster_no) %>%
+    select(-c(`Cluster.x`))
+} 
+
+# filters acore list by cluster (1, 2, 4, 5, 7, 9)
+{
+  LI_acore_list_cl_1 <- filter_cluster(LI_acore_list_data, 1)
+  LI_acore_list_cl_2 <- filter_cluster(LI_acore_list_data, 2)
+  LI_acore_list_cl_4 <- filter_cluster(LI_acore_list_data, 4)
+  LI_acore_list_cl_5 <- filter_cluster(LI_acore_list_data, 5)
+  LI_acore_list_cl_7 <- filter_cluster(LI_acore_list_data, 7)
+  LI_acore_list_cl_9 <- filter_cluster(LI_acore_list_data, 9)
+}
+
+# exports acore list for clusters (1, 2, 4, 5, 7, 9)
+{
+  fwrite(LI_acore_list_cl_1, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Phospho_Protein_LI_Cluster_1.csv", sep = ",")
+  fwrite(LI_acore_list_cl_4, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Phospho_Protein_LI_Cluster_4.csv", sep = ",")
+  fwrite(LI_acore_list_cl_5, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Phospho_Protein_LI_Cluster_5.csv", sep = ",")
+  fwrite(LI_acore_list_cl_7, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Phospho_Protein_LI_Cluster_7.csv", sep = ",")
+  fwrite(LI_acore_list_cl_8, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Phospho_Protein_LI_Cluster_8.csv", sep = ",")
+  fwrite(LI_acore_list_cl_10, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Phospho_Protein_LI_Cluster_10.csv", sep = ",")
+  fwrite(LI_acore_list_cl_11, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Phospho_Protein_LI_Cluster_11.csv", sep = ",")
+  fwrite(LI_acore_list_cl_12, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Phospho_Protein_LI_Cluster_12.csv", sep = ",")
+}
+
+
+
+# ============= 13. Creates Venn Diagram for Set Overlap ======
 
 # == selects raw data for venn (identified) ==
 {
@@ -708,4 +837,6 @@ plot_venn_protein <- function(Set_1, Set_2, Set_3) {
 # combines acore list with log2 data
 # filters out specific clusters
 # exports lists for each cluster
+
+
 
