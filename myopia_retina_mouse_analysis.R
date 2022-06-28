@@ -698,19 +698,28 @@ filter_cluster <- function(dataframe, cluster_no) {
 
 # filters acore list by cluster
 {
-  LI_acore_list_cl1 <- filter_cluster(LI_acore_list_data, 1)
-  LI_acore_list_cl4 <- filter_cluster(LI_acore_list_data, 4)
-  LI_acore_list_cl5 <- filter_cluster(LI_acore_list_data, 5)
-  LI_acore_list_cl7 <- filter_cluster(LI_acore_list_data, 7)
-  LI_acore_list_cl8 <- filter_cluster(LI_acore_list_data, 8)
-  LI_acore_list_cl10 <- filter_cluster(LI_acore_list_data, 10)
-  LI_acore_list_cl11 <- filter_cluster(LI_acore_list_data, 11)
-  LI_acore_list_cl12 <- filter_cluster(LI_acore_list_data, 12)
+  LI_acore_list_cl_1 <- filter_cluster(LI_acore_list_data, 1)
+  LI_acore_list_cl_4 <- filter_cluster(LI_acore_list_data, 4)
+  LI_acore_list_cl_5 <- filter_cluster(LI_acore_list_data, 5)
+  LI_acore_list_cl_7 <- filter_cluster(LI_acore_list_data, 7)
+  LI_acore_list_cl_8 <- filter_cluster(LI_acore_list_data, 8)
+  LI_acore_list_cl_10 <- filter_cluster(LI_acore_list_data, 10)
+  LI_acore_list_cl_11 <- filter_cluster(LI_acore_list_data, 11)
+  LI_acore_list_cl_12 <- filter_cluster(LI_acore_list_data, 12)
   
 }
 
-# exports acore list
-
+# exports acore list for clusters 1, 4, 5, 7, 8, 10, 11, 12
+{
+  fwrite(LI_acore_list_cl_1, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Whole_Protein_LI_Cluster_1.csv", sep = ",")
+  fwrite(LI_acore_list_cl_4, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Whole_Protein_LI_Cluster_4.csv", sep = ",")
+  fwrite(LI_acore_list_cl_5, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Whole_Protein_LI_Cluster_5.csv", sep = ",")
+  fwrite(LI_acore_list_cl_7, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Whole_Protein_LI_Cluster_7.csv", sep = ",")
+  fwrite(LI_acore_list_cl_8, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Whole_Protein_LI_Cluster_8.csv", sep = ",")
+  fwrite(LI_acore_list_cl_10, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Whole_Protein_LI_Cluster_10.csv", sep = ",")
+  fwrite(LI_acore_list_cl_11, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Whole_Protein_LI_Cluster_11.csv", sep = ",")
+  fwrite(LI_acore_list_cl_12, "C:/Users/austi/Documents/Data Projects/R Projects/SERIDataAnalysis/Myopia_Mouse_Analysis/Output/Whole_Protein_LI_Cluster_12.csv", sep = ",")
+}
 
 
 # =========== Volcano Plots - replaces Metaboanalyst =======
