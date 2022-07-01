@@ -28,6 +28,9 @@ library(IMIFA)
 library(tidyverse)
 library(ggVennDiagram)
 library(ggvenn)
+library(GSVA)
+library(org.Mm.eg.db)
+library(limma)
 
 # ====== A) Prepares Data Matrix for Abundance Ratio =====
 
@@ -141,8 +144,6 @@ ratio_combined_no_na <- left_join(ratio_combined,
   
 # exports combined abundance ratio matrix to csv
 fwrite(ratio_combined_no_na, "abund_ratio_combined_GS.csv", sep = ",")
-
-
 
 
 # ===================== B) Using Grouped Abundance
@@ -657,8 +658,8 @@ plot_venn_protein <- function(Set_1, Set_2, Set_3) {
 }
 
 
-# ============ work in progress =====
 
+# ============== 11. Exports Protein Lists from Mfuzz Clusters (LI) ====
 # cleans main matrix before combining
 grouped_combined_GS_export <- grouped_combined_GS %>%
   select(`Gene Symbol`, `Accession`, `S1_LI_0hr`,	`S1_LI_1hr`,	`S1_LI_6hr`,	`S1_LI_9hr`,	`S1_LI_D1`,	`S1_LI_D3`,	`S1_LI_D7`,	`S1_LI_D14`) %>%
@@ -688,6 +689,7 @@ LI_acore_list_data <- LI_acore_list_combined %>%
   
   # selects useful columns
   select(`Accession`, `Cluster.x`, `log2FC`)
+
 
 # creates function to filter out by cluster
 filter_cluster <- function(dataframe, cluster_no) {
@@ -722,233 +724,112 @@ filter_cluster <- function(dataframe, cluster_no) {
 }
 
 
-# =========== Volcano Plots - replaces Metaboanalyst =======
 
-grouped_combined_GS <- fread("grouped_combined_GS_accounted.csv",sep=',')
+# ============== 12. Runs Gene Set Variation Analysis (GSVA)
 
-# create groupings for LI and NL to insert at row 1
+# selects D7 data for GSVA
+gsva_D7_mat <- grouped_combined_GS %>%
+  # selects needed columns
+  select(`Gene Symbol`,	`S1_LI_D7`,	`S2_LI_D7`, `S3_LI_D7`,`S1_NL_D7`,	`S2_NL_D7`, `S3_NL_D7`) %>%
+  
+  # replaces 0 with NA
+  na_if(0) %>%
+  
+  # removes NAs
+  na.omit() %>%
+  
+  # set rownames as `Gene Symbol`
+  column_to_rownames(., var = "Gene Symbol") %>%
+  
+  # converts dataframe to matrix
+  data.matrix(gsva_LI_NL)
 
-# selects columns for each timing (ie 1hr)
-{
-  # selects columns for 0hr
-  grouped_0hr <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_0hr', 'S2_LI_0hr', 'S3_LI_0hr', 'S1_NL_0hr', 'S2_NL_0hr', 'S3_NL_0hr')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_0hr_mean' = mean(c(`S1_LI_0hr`,`S2_LI_0hr`,`S3_LI_0hr`))) %>%
-    mutate('NL_0hr_mean' = mean(c(`S1_NL_0hr`,`S2_NL_0hr`,`S3_NL_0hr`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_0hr_mean/NL_0hr_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_0hr`,`S2_LI_0hr`,`S3_LI_0hr`), c(`S1_NL_0hr`,`S2_NL_0hr`,`S3_NL_0hr`))$p.value))
-  
-  
-  # selects columns for 1hr
-  grouped_1hr <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_1hr', 'S2_LI_1hr', 'S3_LI_1hr', 'S1_NL_1hr', 'S2_NL_1hr', 'S3_NL_1hr')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_1hr_mean' = mean(c(`S1_LI_1hr`,`S2_LI_1hr`,`S3_LI_1hr`))) %>%
-    mutate('NL_1hr_mean' = mean(c(`S1_NL_1hr`,`S2_NL_1hr`,`S3_NL_1hr`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_1hr_mean/NL_1hr_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_1hr`,`S2_LI_1hr`,`S3_LI_1hr`), c(`S1_NL_1hr`,`S2_NL_1hr`,`S3_NL_1hr`))$p.value))
-  
-  # selects columns for 6hr
-  grouped_6hr <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_6hr', 'S2_LI_6hr', 'S3_LI_6hr', 'S1_NL_6hr', 'S2_NL_6hr', 'S3_NL_6hr')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_6hr_mean' = mean(c(`S1_LI_6hr`,`S2_LI_6hr`,`S3_LI_6hr`))) %>%
-    mutate('NL_6hr_mean' = mean(c(`S1_NL_6hr`,`S2_NL_6hr`,`S3_NL_6hr`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_6hr_mean/NL_6hr_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_6hr`,`S2_LI_6hr`,`S3_LI_6hr`), c(`S1_NL_6hr`,`S2_NL_6hr`,`S3_NL_6hr`))$p.value))
-  
-  # selects columns for 9hr
-  grouped_9hr <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_9hr', 'S2_LI_9hr', 'S3_LI_9hr', 'S1_NL_9hr', 'S2_NL_9hr', 'S3_NL_9hr')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_9hr_mean' = mean(c(`S1_LI_9hr`,`S2_LI_9hr`,`S3_LI_9hr`))) %>%
-    mutate('NL_9hr_mean' = mean(c(`S1_NL_9hr`,`S2_NL_9hr`,`S3_NL_9hr`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_9hr_mean/NL_9hr_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_9hr`,`S2_LI_9hr`,`S3_LI_9hr`), c(`S1_NL_9hr`,`S2_NL_9hr`,`S3_NL_9hr`))$p.value))
-  
-  # selects columns for D1
-  grouped_D1 <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_D1', 'S2_LI_D1', 'S3_LI_D1', 'S1_NL_D1', 'S2_NL_D1', 'S3_NL_D1')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_D1_mean' = mean(c(`S1_LI_D1`,`S2_LI_D1`,`S3_LI_D1`))) %>%
-    mutate('NL_D1_mean' = mean(c(`S1_NL_D1`,`S2_NL_D1`,`S3_NL_D1`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_D1_mean/NL_D1_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D1`,`S2_LI_D1`,`S3_LI_D1`), c(`S1_NL_D1`,`S2_NL_D1`,`S3_NL_D1`))$p.value))
-  
-  # selects columns for D14
-  grouped_D14 <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_D14', 'S2_LI_D14', 'S3_LI_D14', 'S1_NL_D14', 'S2_NL_D14', 'S3_NL_D14')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_D14_mean' = mean(c(`S1_LI_D14`,`S2_LI_D14`,`S3_LI_D14`))) %>%
-    mutate('NL_D14_mean' = mean(c(`S1_NL_D14`,`S2_NL_D14`,`S3_NL_D14`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_D14_mean/NL_D14_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D14`,`S2_LI_D14`,`S3_LI_D14`), c(`S1_NL_D14`,`S2_NL_D14`,`S3_NL_D14`))$p.value))
-  
-  # selects columns for D3
-  grouped_D3 <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_D3', 'S2_LI_D3', 'S3_LI_D3', 'S1_NL_D3', 'S2_NL_D3', 'S3_NL_D3')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_D3_mean' = mean(c(`S1_LI_D3`,`S2_LI_D3`,`S3_LI_D3`))) %>%
-    mutate('NL_D3_mean' = mean(c(`S1_NL_D3`,`S2_NL_D3`,`S3_NL_D3`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_D3_mean/NL_D3_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D3`,`S2_LI_D3`,`S3_LI_D3`), c(`S1_NL_D3`,`S2_NL_D3`,`S3_NL_D3`))$p.value))
-  
-  # selects columns for D7
-  grouped_D7 <- grouped_combined_GS %>%
-    select(c('Gene Symbol', 'S1_LI_D7', 'S2_LI_D7', 'S3_LI_D7', 'S1_NL_D7', 'S2_NL_D7', 'S3_NL_D7')) %>%
-    
-    # gets mean of LI and NL
-    group_by(`Gene Symbol`) %>%
-    mutate('LI_D7_mean' = mean(c(`S1_LI_D7`,`S2_LI_D7`,`S3_LI_D7`))) %>%
-    mutate('NL_D7_mean' = mean(c(`S1_NL_D7`,`S2_NL_D7`,`S3_NL_D7`))) %>%
-    
-    # calculates log2 fold change
-    mutate('FC' = LI_D7_mean/NL_D7_mean) %>%
-    mutate('Log2FC' = log2(FC)) %>%
-    
-    # calculates p value  
-    mutate('p_value' = as.numeric(t.test(c(`S1_LI_D7`,`S2_LI_D7`,`S3_LI_D7`), c(`S1_NL_D7`,`S2_NL_D7`,`S3_NL_D7`))$p.value))
-  
-}
+
+# gets gene symbols and entrez ID from mouse GO database
+go_annot <- AnnotationDbi::select(org.Mm.eg.db, keys=keys(org.Mm.eg.db), columns="SYMBOL")
+
+# splits by entrez ID and GO and converts to list
+genes_by_symbol <- split(go_annot$SYMBOL,go_annot$ENTREZID)
+
+# calculates GSVA enrichment score estimates
+gsva_estimate <- gsva(gsva_D7_mat, genes_by_symbol, annotation=org.Mm.eg.db, verbose=FALSE)
+
+mod <- model.matrix(~ factor(c("LI", "LI", "LI", "NL", "NL", "NL")))
+colnames(mod) <- c("LI", "NL")
+fit <- lmFit(gsva_estimate, mod)
+fit <- eBayes(fit)
+res <- decideTests(fit, p.value=0.05)
+summary(res)
+# LI   NL
+# Down      0    0
+# NotSig 2587 6047
+# Up     3460    0
 
 # plots volcano plot
-vol_plot <- function(x) {
-  EnhancedVolcano(x,
-                  lab = rownames(x),
-                  x = 'Log2FC',
-                  y = 'p_value',
-                  title = 'LI / NL',
-                  pCutoff = 0.05,
-                  FCcutoff = 1.0,
-                  pointSize = 3.0,
-                  labSize = 3.0)
-}
+tt <- topTable(fit, coef=2, n=Inf)
+DEpwys <- rownames(tt)[tt$adj.P.Val <= 0.01]
+plot(tt$logFC, -log10(tt$P.Value), pch=".", cex=4, col=grey(0.75),
+     main="", xlab="GSVA enrichment score difference", ylab=expression(-log[10]~~Raw~P-value))
+abline(h=-log10(max(tt$P.Value[tt$adj.P.Val <= 0.01])), col=grey(0.5), lwd=1, lty=2)
+points(tt$logFC[match(DEpwys, rownames(tt))],
+       -log10(tt$P.Value[match(DEpwys, rownames(tt))]), pch=".", cex=5, col="darkred")
+text(max(tt$logFC)*0.85, -log10(max(tt$P.Value[tt$adj.P.Val <= 0.01])), "1% FDR", pos=3)
 
-# exports plots volcano plots for 7 timings (ie 1hr)
-{ 
-  
-  png(file="vplot_0hr.png")
-  vol_plot(grouped_0hr)
-  dev.off()
-  
-  png(file="vplot_1hr.png")
-  vol_plot(grouped_1hr)
-  dev.off()
-  
-  png(file="vplot_6hr.png")
-  vol_plot(grouped_6hr)
-  dev.off()
-  
-  png(file="vplot_9hr.png")
-  vol_plot(grouped_9hr)
-  dev.off()
-  
-  png(file="vplot_D1.png")
-  vol_plot(grouped_D1)
-  dev.off()
-  
-  png(file="vplot_D3.png")
-  vol_plot(grouped_D3)
-  dev.off()
-  
-  png(file="vplot_D7.png")
-  vol_plot(grouped_D7)
-  dev.off()
-  
-  png(file="vplot_D14.png")
-  vol_plot(grouped_D14)
-  dev.off()
-  
-}
+# plots heatmap
+DEpwys_es <- DEpwys
+colorLegend <- c("darkred", "darkblue")
+names(colorLegend) <- c("LI", "NL")
+sample.color.map <- colorLegend[(gsva_D7_mat)]
+names(sample.color.map) <- colnames(gsva_D7_mat)
+sampleClustering <- hclust(as.dist(1-cor(gsva_D7_mat, method="spearman")),
+                           method="complete")
+geneSetClustering <- hclust(as.dist(1-cor(t(gsva_D7_mat), method="pearson")),
+                            method="complete")
+heatmap(gsva_D7_mat, ColSideColors=sample.color.map, xlab="samples",
+        ylab="Pathways", margins=c(2, 20),
+        labRow=substr(gsub("_", " ", gsub("^KEGG_|^REACTOME_|^BIOCARTA_", "",
+                                          rownames(gsva_D7_mat))), 1, 35),
+        labCol="", scale="row", Colv=as.dendrogram(sampleClustering),
+        Rowv=as.dendrogram(geneSetClustering))
+legend("topleft", names(colorLegend), fill=colorLegend, inset=0.01, bg="white")
 
+# ============== sample =========
+data(leukemia)
+leukemia_eset
+data(c2BroadSets)
 
-# =========== Metaboanalyst Volcano Plot ================
-{
-  # initializing object
-  mSet <- InitDataObjects("pktable", "stat", FALSE)
-  # loading in data
-  mSet <- Read.TextData(mSet, "abundance_S1_grouped_input.csv", "colu", "disc");
-  # data check
-  mSet <- SanityCheckData(mSet)
-  mSet <- ReplaceMin(mSet);
-  
-  # filtering features
-  mSet <- FilterVariable(mSet, "none", "F", 25)
-  
-  # median normalization, log10 transformation, pareto scaling
-  mSet <- PreparePrenormData(mSet)
-  mSet <- Normalization(mSet, "MedianNorm", "LogNorm", "ParetoNorm", ratio=FALSE, ratioNum=20)
-  mSet <- PlotNormSummary(mSet, "norm_0_", "png", 72, width=NA)
-  mSet <- PlotSampleNormSummary(mSet, "snorm_0_", "png", 72, width=NA)
-  
-  # plot volcano plot
-  mSet <- Volcano.Anal(mSet, FALSE, 1.5, 0, F, 0.05, TRUE, "raw")
-  mSet <- PlotVolcano(mSet, "volcano_abundance_S1",1, 0, "png", 72, width=NA)
-  
-  # save transformed dataset
-  mSet <- SaveTransformedData(mSet)
-  
-}
+leukemia_es <- gsva(leukemia_eset, c2BroadSets, min.sz=10, max.sz=500)
+leukemia_es$subtype
 
-# reading in csv of 3 groups
-grouped_s1 <- fread("grouped_1.csv",sep=',')
+mod <- model.matrix(~ factor(leukemia_es$subtype))
+colnames(mod) <- c("ALL", "MLLvsALL")
+fit <- lmFit(leukemia_es, mod)
+fit <- eBayes(fit)
+res <- decideTests(fit, p.value=0.01)
+summary(res)
 
-grouped_s2 <- fread("grouped_2.csv",sep=',')
-grouped_s3 <- fread("grouped_3.csv",sep=',')
+tt <- topTable(fit, coef=2, n=Inf)
+DEpwys <- rownames(tt)[tt$adj.P.Val <= 0.01]
+plot(tt$logFC, -log10(tt$P.Value), pch=".", cex=4, col=grey(0.75),
+     main="", xlab="GSVA enrichment score difference", ylab=expression(-log[10]~~Raw~P-value))
+abline(h=-log10(max(tt$P.Value[tt$adj.P.Val <= 0.01])), col=grey(0.5), lwd=1, lty=2)
+points(tt$logFC[match(DEpwys, rownames(tt))],
+       -log10(tt$P.Value[match(DEpwys, rownames(tt))]), pch=".", cex=5, col="darkred")
+text(max(tt$logFC)*0.85, -log10(max(tt$P.Value[tt$adj.P.Val <= 0.01])), "1% FDR", pos=3)
 
-grouped_combined <- left_join(grouped_s3,grouped_s2,by = 'Accession')
-grouped_combined_2 <- left_join(grouped_combined,grouped_s1,by = 'Accession')
-grouped_combined_2_no_na <- na.omit(grouped_combined_2)
-
-write.csv(grouped_combined_2_no_na,"grouped_combined.csv", row.names = FALSE)
-
+DEpwys_es <- exprs(leukemia_es[DEpwys, ])
+colorLegend <- c("darkred", "darkblue")
+names(colorLegend) <- c("ALL", "MLL")
+sample.color.map <- colorLegend[pData(leukemia_es)[, "subtype"]]
+names(sample.color.map) <- colnames(DEpwys_es)
+sampleClustering <- hclust(as.dist(1-cor(DEpwys_es, method="spearman")),
+                           method="complete")
+geneSetClustering <- hclust(as.dist(1-cor(t(DEpwys_es), method="pearson")),
+                            method="complete")
+heatmap(DEpwys_es, ColSideColors=sample.color.map, xlab="samples",
+        ylab="Pathways", margins=c(2, 20),
+        labRow=substr(gsub("_", " ", gsub("^KEGG_|^REACTOME_|^BIOCARTA_", "",
+                                          rownames(DEpwys_es))), 1, 35),
+        labCol="", scale="row", Colv=as.dendrogram(sampleClustering),
+        Rowv=as.dendrogram(geneSetClustering))
+legend("topleft", names(colorLegend), fill=colorLegend, inset=0.01, bg="white")
