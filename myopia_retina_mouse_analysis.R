@@ -28,9 +28,7 @@ library(IMIFA)
 library(tidyverse)
 library(ggVennDiagram)
 library(ggvenn)
-library(GSVA)
-library(org.Mm.eg.db)
-library(limma)
+
 
 # ====== A) Prepares Data Matrix for Abundance Ratio =====
 
@@ -726,11 +724,15 @@ filter_cluster <- function(dataframe, cluster_no) {
 
 
 # ============== 12. Runs Gene Set Variation Analysis (GSVA)
+library(GSVA)
+library(GSVAdata)
+library(org.Mm.eg.db)
+library(limma)
 
 # selects D7 data for GSVA
 gsva_D7_mat <- grouped_combined_GS %>%
   # selects needed columns
-  select(`Gene Symbol`,	`S1_LI_D7`,	`S2_LI_D7`, `S3_LI_D7`,`S1_NL_D7`,	`S2_NL_D7`, `S3_NL_D7`) %>%
+  dplyr::select(`Gene Symbol`,	`S1_LI_D7`,	`S2_LI_D7`, `S3_LI_D7`,`S1_NL_D7`,	`S2_NL_D7`, `S3_NL_D7`) %>%
   
   # replaces 0 with NA
   na_if(0) %>%
@@ -742,7 +744,7 @@ gsva_D7_mat <- grouped_combined_GS %>%
   column_to_rownames(., var = "Gene Symbol") %>%
   
   # converts dataframe to matrix
-  data.matrix(gsva_LI_NL)
+  data.matrix()
 
 
 # gets gene symbols and entrez ID from mouse GO database
@@ -752,7 +754,7 @@ go_annot <- AnnotationDbi::select(org.Mm.eg.db, keys=keys(org.Mm.eg.db), columns
 genes_by_symbol <- split(go_annot$SYMBOL,go_annot$ENTREZID)
 
 # calculates GSVA enrichment score estimates
-gsva_estimate <- gsva(gsva_D7_mat, genes_by_symbol, annotation=org.Mm.eg.db, verbose=FALSE)
+gsva_estimate <- gsva(gsva_D7_mat, genes_by_symbol, annotation=org.Mm.eg.db)
 
 mod <- model.matrix(~ factor(c("LI", "LI", "LI", "NL", "NL", "NL")))
 colnames(mod) <- c("LI", "NL")
@@ -797,6 +799,8 @@ legend("topleft", names(colorLegend), fill=colorLegend, inset=0.01, bg="white")
 data(leukemia)
 leukemia_eset
 data(c2BroadSets)
+
+leu_mat <- data.matrix(leukemia_eset)
 
 leukemia_es <- gsva(leukemia_eset, c2BroadSets, min.sz=10, max.sz=500)
 leukemia_es$subtype

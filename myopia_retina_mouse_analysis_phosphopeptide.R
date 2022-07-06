@@ -95,7 +95,8 @@ Retina_WP_S3_grouped <- read_excel('Myopia_retina_Phospho_results.xlsx', sheet =
                                       'S2_LI_1hr','S2_LI_6hr','S2_LI_9hr','S2_LI_D1','S2_LI_D14','S2_LI_D3','S2_LI_D7','S2_NL_0hr','S2_NL_1hr','S2_NL_6hr','S2_NL_9hr','S2_NL_D1','S2_NL_D14','S2_NL_D3','S2_NL_D7')
   
   # removes abundance column
-  Retina_WP_S2_grouped <- select(Retina_WP_S2_grouped, -c(`Abundances (Grouped)`)) %>%
+  Retina_WP_S2_grouped <- Retina_WP_S2_grouped %>%
+    select(., -c(`Abundances (Grouped)`)) %>%
     mutate(S2_LI_0hr = S2_NL_0hr) %>%
     relocate(S2_LI_0hr, .after = `Master_Protein_Accessions`) %>%
     relocate(S2_LI_D14, .after = `S2_LI_D7`) %>%
