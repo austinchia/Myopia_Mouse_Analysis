@@ -12,10 +12,8 @@ gc()
 
 # ============== Loads Packages =======
 library(readxl)
-library(MetaboAnalystR)
 library(dplyr)
 library(data.table)
-library(EnhancedVolcano)
 library(Mfuzz)
 library(berryFunctions)
 library(destiny)
@@ -618,42 +616,42 @@ plot_venn_protein <- function(Set_1, Set_2, Set_3) {
   )
 }
 
-# plots venn diagram (quantifiable, protein)
-{
-  # plots venn
-  plot_venn_protein(Retina_WP_S1_grouped, 
-                    Retina_WP_S2_grouped, 
-                    Retina_WP_S3_grouped
-  )
-  
-  # exports venn diagrams (quantifiable, protein)
-  ggsave(
-    "Whole_Protein_Venn_Protein_Quantifiable.png",
-    plot = last_plot(),
-    bg = 'white',
-    width = 5, 
-    height = 5
-  )
-}
-
-# plots venn diagram (identified, protein)
-{
-  # plots venn
-  plot_venn_protein(Retina_WP_S1_identified, 
-                    Retina_WP_S2_identified, 
-                    Retina_WP_S3_identified
-  )
-  
-  # exports venn diagrams (identified proteins, whole protein)
-  ggsave(
-    "Whole_Protein_Venn_Protein_Identified.png",
-    plot = last_plot(),
-    bg = 'white',
-    width = 5, 
-    height = 5
-  )
-  
-}
+# # plots venn diagram (quantifiable, protein)
+# {
+#   # plots venn
+#   plot_venn_protein(Retina_WP_S1_grouped, 
+#                     Retina_WP_S2_grouped, 
+#                     Retina_WP_S3_grouped
+#   )
+#   
+#   # exports venn diagrams (quantifiable, protein)
+#   ggsave(
+#     "Whole_Protein_Venn_Protein_Quantifiable.png",
+#     plot = last_plot(),
+#     bg = 'white',
+#     width = 5, 
+#     height = 5
+#   )
+# }
+# 
+# # plots venn diagram (identified, protein)
+# {
+#   # plots venn
+#   plot_venn_protein(Retina_WP_S1_identified, 
+#                     Retina_WP_S2_identified, 
+#                     Retina_WP_S3_identified
+#   )
+#   
+#   # exports venn diagrams (identified proteins, whole protein)
+#   ggsave(
+#     "Whole_Protein_Venn_Protein_Identified.png",
+#     plot = last_plot(),
+#     bg = 'white',
+#     width = 5, 
+#     height = 5
+#   )
+#   
+# }
 
 
 
@@ -723,7 +721,7 @@ filter_cluster <- function(dataframe, cluster_no) {
 
 
 
-# ============== 12. Runs Gene Set Variation Analysis (GSVA)
+# ============== 12. Runs Gene Set Variation Analysis (GSVA) ====
 library(GSVA)
 library(GSVAdata)
 library(org.Mm.eg.db)
@@ -746,15 +744,23 @@ gsva_D7_mat <- grouped_combined_GS %>%
   # converts dataframe to matrix
   data.matrix()
 
-
 # gets gene symbols and entrez ID from mouse GO database
-go_annot <- AnnotationDbi::select(org.Mm.eg.db, keys=keys(org.Mm.eg.db), columns="SYMBOL")
+go_annot <- AnnotationDbi::select(org.Mm.eg.db, keys=keys(org.Mm.eg.db), columns = c("SYMBOL"))
 
-# splits by entrez ID and GO and converts to list
-genes_by_symbol <- split(go_annot$SYMBOL,go_annot$ENTREZID)
+# # splits by entrez ID and GO and converts to list
+# genes_by_symbol <- split(go_annot$`SYMBOL`,go_annot$ENTREZID)
+# 
+# mouse_gene_set <- data.frame(unlist(readRDS("Mm.c2.cp.kegg.v7.1.entrez.rds"))) %>%
+#   rownames_to_column(., var = "Pathway") %>%
+#   relocate(`Pathway`, .after = last_col()) %>%
+#   rename("ENTREZID" = "unlist.readRDS..Mm.c2.cp.kegg.v7.1.entrez.rds...")
+# 
+# mouse_set_combined <- left_join(go_annot, mouse_gene_set, "ENTREZID") %>%
+#   na.omit() %>%
+#   distinct(`ENTREZID`, .keep_all= TRUE)
 
 # calculates GSVA enrichment score estimates
-gsva_estimate <- gsva(gsva_D7_mat, genes_by_symbol, annotation=org.Mm.eg.db)
+gsva_estimate <- gsva(gsva_D7_mat, genes_by_symbol)
 
 mod <- model.matrix(~ factor(c("LI", "LI", "LI", "NL", "NL", "NL")))
 colnames(mod) <- c("LI", "NL")
@@ -763,19 +769,19 @@ fit <- eBayes(fit)
 res <- decideTests(fit, p.value=0.05)
 summary(res)
 # LI   NL
-# Down      0    0
-# NotSig 2587 6047
-# Up     3460    0
+# Down   5633    0
+# NotSig  149 5784
+# Up        2    0
 
 # plots volcano plot
 tt <- topTable(fit, coef=2, n=Inf)
-DEpwys <- rownames(tt)[tt$adj.P.Val <= 0.01]
-plot(tt$logFC, -log10(tt$P.Value), pch=".", cex=4, col=grey(0.75),
+DEpwys <- rownames(tt)[tt$adj.P.Val <= 0.05]
+plot(tt$logFC, -(tt$P.Value), pch=".", cex=4, col=grey(0.75),
      main="", xlab="GSVA enrichment score difference", ylab=expression(-log[10]~~Raw~P-value))
-abline(h=-log10(max(tt$P.Value[tt$adj.P.Val <= 0.01])), col=grey(0.5), lwd=1, lty=2)
+abline(h=max(tt$P.Value[tt$adj.P.Val <= 0.01]), col=grey(0.5), lwd=1, lty=2)
 points(tt$logFC[match(DEpwys, rownames(tt))],
-       -log10(tt$P.Value[match(DEpwys, rownames(tt))]), pch=".", cex=5, col="darkred")
-text(max(tt$logFC)*0.85, -log10(max(tt$P.Value[tt$adj.P.Val <= 0.01])), "1% FDR", pos=3)
+       tt$P.Value[match(DEpwys, rownames(tt))], pch=".", cex=5, col="darkred")
+text(max(tt$logFC)*0.85, max(tt$P.Value[tt$adj.P.Val <= 0.01]), "1% FDR", pos=3)
 
 # plots heatmap
 DEpwys_es <- DEpwys
